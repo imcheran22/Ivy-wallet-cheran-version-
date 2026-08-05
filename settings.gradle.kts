@@ -1,9 +1,3 @@
-plugins {
-    // Lets Gradle auto-download a matching JDK when a project requests a toolchain
-    // (e.g. ci-actions:* modules requiring JDK 17) that isn't already installed locally.
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
-}
-
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 dependencyResolutionManagement {
@@ -18,11 +12,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "IvyWallet"
 include(":app")
-include(":ci-actions:base")
-include(":ci-actions:compose-stability")
-include(":ci-actions:issue-assign")
-include(":ci-actions:issue-create-comment")
-include(":ci-actions:pr-description-check")
 include(":feature:accounts")
 include(":feature:attributions")
 include(":feature:balance")
