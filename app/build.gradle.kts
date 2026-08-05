@@ -124,6 +124,7 @@ android {
 dependencies {
     implementation(projects.feature.attributions)
     implementation(projects.feature.balance)
+    implementation(projects.feature.battery)
     implementation(projects.feature.budgets)
     implementation(projects.feature.categories)
     implementation(projects.feature.contributors)

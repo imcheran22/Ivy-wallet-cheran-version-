@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.runtime.Composable
 import com.ivy.attributions.AttributionsScreenImpl
 import com.ivy.balance.BalanceScreen
+import com.ivy.battery.ui.BatteryScreenImpl
 import com.ivy.budgets.BudgetScreen
 import com.ivy.categories.CategoriesScreen
 import com.ivy.contributors.ContributorsScreenImpl
@@ -19,6 +20,7 @@ import com.ivy.loans.loandetails.LoanDetailsScreen
 import com.ivy.main.MainScreen
 import com.ivy.navigation.AttributionsScreen
 import com.ivy.navigation.BalanceScreen
+import com.ivy.navigation.BatteryScreen
 import com.ivy.navigation.BudgetScreen
 import com.ivy.navigation.CSVScreen
 import com.ivy.navigation.CategoriesScreen
@@ -82,6 +84,7 @@ fun BoxWithConstraintsScope.IvyNavGraph(screen: Screen?) {
         is LoanDetailsScreen -> LoanDetailsScreen(screen = screen)
         is SearchScreen -> SearchScreen(screen = screen)
         is CSVScreen -> CSVScreen(screen = screen)
+        BatteryScreen -> BatteryScreenImpl()
         FeaturesScreen -> FeaturesScreenImpl()
         AttributionsScreen -> AttributionsScreenImpl()
         ContributorsScreen -> ContributorsScreenImpl()

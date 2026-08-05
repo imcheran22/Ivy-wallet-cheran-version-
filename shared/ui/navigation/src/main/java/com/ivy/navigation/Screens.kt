@@ -134,6 +134,11 @@ data object ExchangeRatesScreen : Screen {
         get() = true
 }
 
+/**
+ * Battery monitoring: charge/discharge measurement, health and per-app drain.
+ */
+data object BatteryScreen : Screen
+
 data object FeaturesScreen : Screen
 
 data object AttributionsScreen : Screen
