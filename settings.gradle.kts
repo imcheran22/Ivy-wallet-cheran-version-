@@ -1,3 +1,9 @@
+plugins {
+    // Lets Gradle auto-download a matching JDK when a project requests a toolchain
+    // (e.g. ci-actions:* modules requiring JDK 17) that isn't already installed locally.
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+}
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 dependencyResolutionManagement {
