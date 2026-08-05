@@ -1,5 +1,9 @@
 package com.ivy.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -18,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,15 +33,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.ivy.base.legacy.Theme
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
@@ -74,6 +82,8 @@ import com.ivy.wallet.ui.theme.modal.CurrencyModal
 import com.ivy.wallet.ui.theme.modal.DeleteModal
 import com.ivy.wallet.ui.theme.modal.NameModal
 import com.ivy.wallet.ui.theme.modal.ProgressModal
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @ExperimentalFoundationApi
@@ -98,6 +108,13 @@ fun BoxWithConstraintsScope.SettingsScreen() {
         nameLocalAccount = uiState.name,
         startDateOfMonth = uiState.startDateOfMonth.toInt(),
         languageOptionVisible = uiState.languageOptionVisible,
+        smsAutoImportEnabled = uiState.smsAutoImportEnabled,
+        cloudSyncEnabled = uiState.cloudSyncEnabled,
+        cloudSyncSupabaseUrl = uiState.cloudSyncSupabaseUrl,
+        cloudSyncSupabaseAnonKey = uiState.cloudSyncSupabaseAnonKey,
+        cloudSyncInProgress = uiState.cloudSyncInProgress,
+        cloudSyncLastSyncedEpochMs = uiState.cloudSyncLastSyncedEpochMs,
+        cloudSyncError = uiState.cloudSyncError,
         onSetCurrency = {
             viewModel.onEvent(SettingsEvent.SetCurrency(it))
         },
@@ -136,6 +153,21 @@ fun BoxWithConstraintsScope.SettingsScreen() {
         },
         onSwitchLanguage = {
             viewModel.onEvent(SettingsEvent.SwitchLanguage)
+        },
+        onSetSmsAutoImportEnabled = {
+            viewModel.onEvent(SettingsEvent.SetSmsAutoImportEnabled(it))
+        },
+        onSetCloudSyncEnabled = {
+            viewModel.onEvent(SettingsEvent.SetCloudSyncEnabled(it))
+        },
+        onSetCloudSyncCredentials = { url, anonKey ->
+            viewModel.onEvent(SettingsEvent.SetCloudSyncCredentials(url, anonKey))
+        },
+        onTriggerCloudSyncNow = {
+            viewModel.onEvent(SettingsEvent.TriggerCloudSyncNow)
+        },
+        onTriggerCloudRestore = {
+            viewModel.onEvent(SettingsEvent.TriggerCloudRestore)
         }
     )
 }
@@ -168,7 +200,19 @@ private fun BoxWithConstraintsScope.UI(
     onSetStartDateOfMonth: (Int) -> Unit = {},
     onDeleteAllUserData: () -> Unit = {},
     onDeleteCloudUserData: () -> Unit = {},
-    onSwitchLanguage: () -> Unit = {}
+    onSwitchLanguage: () -> Unit = {},
+    smsAutoImportEnabled: Boolean = false,
+    cloudSyncEnabled: Boolean = false,
+    cloudSyncSupabaseUrl: String = "",
+    cloudSyncSupabaseAnonKey: String = "",
+    cloudSyncInProgress: Boolean = false,
+    cloudSyncLastSyncedEpochMs: Long? = null,
+    cloudSyncError: String? = null,
+    onSetSmsAutoImportEnabled: (Boolean) -> Unit = {},
+    onSetCloudSyncEnabled: (Boolean) -> Unit = {},
+    onSetCloudSyncCredentials: (String, String) -> Unit = { _, _ -> },
+    onTriggerCloudSyncNow: () -> Unit = {},
+    onTriggerCloudRestore: () -> Unit = {}
 ) {
     var currencyModalVisible by remember { mutableStateOf(false) }
     var nameModalVisible by remember { mutableStateOf(false) }
@@ -386,6 +430,32 @@ private fun BoxWithConstraintsScope.UI(
 
             CustomFeatures(
                 onClick = { nav.navigateTo(FeaturesScreen) }
+            )
+        }
+
+        item {
+            SettingsSectionDivider(text = "SMS & cloud sync")
+
+            Spacer(Modifier.height(16.dp))
+
+            SmsAutoImportSwitch(
+                enabled = smsAutoImportEnabled,
+                onSetEnabled = onSetSmsAutoImportEnabled
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            CloudSyncSection(
+                cloudSyncEnabled = cloudSyncEnabled,
+                supabaseUrl = cloudSyncSupabaseUrl,
+                supabaseAnonKey = cloudSyncSupabaseAnonKey,
+                syncInProgress = cloudSyncInProgress,
+                lastSyncedEpochMs = cloudSyncLastSyncedEpochMs,
+                error = cloudSyncError,
+                onSetCloudSyncEnabled = onSetCloudSyncEnabled,
+                onSetCredentials = onSetCloudSyncCredentials,
+                onSyncNow = onTriggerCloudSyncNow,
+                onRestore = onTriggerCloudRestore
             )
         }
 
@@ -814,6 +884,173 @@ private fun AppSwitch(
         }
 
         Spacer(Modifier.width(16.dp))
+    }
+}
+
+@Composable
+private fun SmsAutoImportSwitch(
+    enabled: Boolean,
+    onSetEnabled: (Boolean) -> Unit
+) {
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        val granted = grants[Manifest.permission.RECEIVE_SMS] == true
+        onSetEnabled(granted)
+    }
+
+    AppSwitch(
+        lockApp = enabled,
+        onSetLockApp = { turnOn ->
+            if (turnOn) {
+                val alreadyGranted = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.RECEIVE_SMS
+                ) == PackageManager.PERMISSION_GRANTED
+                if (alreadyGranted) {
+                    onSetEnabled(true)
+                } else {
+                    permissionLauncher.launch(
+                        arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS)
+                    )
+                }
+            } else {
+                onSetEnabled(false)
+            }
+        },
+        text = "Auto-import transactions from SMS",
+        description = "Best-effort: parses incoming bank SMS for amount/account and " +
+            "creates a transaction. Category is guessed when possible, otherwise left empty.",
+        icon = R.drawable.ic_notification_m
+    )
+}
+
+@Composable
+private fun CloudSyncSection(
+    cloudSyncEnabled: Boolean,
+    supabaseUrl: String,
+    supabaseAnonKey: String,
+    syncInProgress: Boolean,
+    lastSyncedEpochMs: Long?,
+    error: String?,
+    onSetCloudSyncEnabled: (Boolean) -> Unit,
+    onSetCredentials: (String, String) -> Unit,
+    onSyncNow: () -> Unit,
+    onRestore: () -> Unit
+) {
+    var urlField by remember(supabaseUrl) { mutableStateOf(supabaseUrl) }
+    var keyField by remember(supabaseAnonKey) { mutableStateOf(supabaseAnonKey) }
+
+    AppSwitch(
+        lockApp = cloudSyncEnabled,
+        onSetLockApp = onSetCloudSyncEnabled,
+        text = "Cloud sync (Supabase)",
+        description = "Mirrors your accounts, categories and transactions to a Supabase " +
+            "project you configure below, so your data survives reinstalls/new devices.",
+        icon = R.drawable.ic_vue_files_folder_cloud
+    )
+
+    if (cloudSyncEnabled) {
+        Spacer(Modifier.height(12.dp))
+
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            OutlinedTextField(
+                value = urlField,
+                onValueChange = { urlField = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Supabase project URL") },
+                placeholder = { Text("https://xxxx.supabase.co") },
+                singleLine = true
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = keyField,
+                onValueChange = { keyField = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Supabase anon/public API key") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation()
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(UI.shapes.rFull)
+                        .background(UI.colors.medium, UI.shapes.rFull)
+                        .clickable { onSetCredentials(urlField, keyField) }
+                        .padding(vertical = 12.dp),
+                    text = "Save credentials",
+                    style = UI.typo.c.style(
+                        fontWeight = FontWeight.Bold,
+                        color = UI.colors.pureInverse,
+                        textAlign = TextAlign.Center
+                    )
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            val lastSyncedText = lastSyncedEpochMs?.let {
+                "Last synced: ${
+                    SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()).format(Date(it))
+                }"
+            } ?: "Never synced yet"
+
+            Text(
+                text = lastSyncedText,
+                style = UI.typo.c.style(color = Gray)
+            )
+
+            if (error != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = error,
+                    style = UI.typo.c.style(color = Red)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(UI.shapes.rFull)
+                        .background(UI.colors.medium, UI.shapes.rFull)
+                        .thenIf(!syncInProgress) { clickable { onSyncNow() } }
+                        .padding(vertical = 12.dp),
+                    text = if (syncInProgress) "Syncing..." else "Sync now",
+                    style = UI.typo.c.style(
+                        fontWeight = FontWeight.Bold,
+                        color = UI.colors.pureInverse,
+                        textAlign = TextAlign.Center
+                    )
+                )
+
+                Spacer(Modifier.width(12.dp))
+
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(UI.shapes.rFull)
+                        .border(2.dp, UI.colors.medium, UI.shapes.rFull)
+                        .thenIf(!syncInProgress) { clickable { onRestore() } }
+                        .padding(vertical = 12.dp),
+                    text = "Restore from cloud",
+                    style = UI.typo.c.style(
+                        fontWeight = FontWeight.Bold,
+                        color = UI.colors.pureInverse,
+                        textAlign = TextAlign.Center
+                    )
+                )
+            }
+        }
     }
 }
 

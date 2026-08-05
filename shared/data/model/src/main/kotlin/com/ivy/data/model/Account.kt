@@ -19,4 +19,7 @@ data class Account(
     val icon: IconAsset?,
     val includeInBalance: Boolean,
     override val orderNum: Double,
+    // Last digits of the linked bank account/card number, used to match incoming
+    // bank SMS notifications to this account for auto-import.
+    val bankAccountSuffix: String? = null,
 ) : Identifiable<AccountId>, Reorderable

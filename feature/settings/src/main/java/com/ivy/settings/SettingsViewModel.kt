@@ -10,16 +10,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.viewModelScope
 import com.ivy.base.legacy.SharedPrefs
 import com.ivy.base.legacy.Theme
 import com.ivy.base.legacy.refreshWidget
 import com.ivy.data.backup.BackupDataUseCase
+import com.ivy.data.datastore.DatastoreKeys
 import com.ivy.data.db.dao.read.SettingsDao
 import com.ivy.data.db.dao.write.WriteSettingsDao
 import com.ivy.data.model.primitive.AssetCode
+import com.ivy.data.sync.CloudSyncRepository
+import com.ivy.data.sync.CloudSyncSettings
 import com.ivy.domain.RootScreen
+import com.ivy.domain.sync.CloudSyncTrigger
 import com.ivy.domain.usecase.csv.ExportCsvUseCase
 import com.ivy.domain.usecase.exchange.SyncExchangeRatesUseCase
 import com.ivy.frp.monad.Res
@@ -38,6 +46,7 @@ import com.ivy.widget.balance.WalletBalanceWidgetReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -57,6 +66,10 @@ class SettingsViewModel @Inject constructor(
     private val updateSettingsAct: UpdateSettingsAct,
     private val settingsWriter: WriteSettingsDao,
     private val exportCsvUseCase: ExportCsvUseCase,
+    private val dataStore: DataStore<Preferences>,
+    private val cloudSyncSettings: CloudSyncSettings,
+    private val cloudSyncRepository: CloudSyncRepository,
+    private val cloudSyncTrigger: CloudSyncTrigger,
     @ApplicationContext private val context: Context
 ) : ComposeViewModel<SettingsState, SettingsEvent>() {
 
@@ -70,6 +83,13 @@ class SettingsViewModel @Inject constructor(
     private val treatTransfersAsIncomeExpense = mutableStateOf(false)
     private val startDateOfMonth = mutableIntStateOf(1)
     private val progressState = mutableStateOf(false)
+    private val smsAutoImportEnabled = mutableStateOf(false)
+    private val cloudSyncEnabled = mutableStateOf(false)
+    private val cloudSyncSupabaseUrl = mutableStateOf("")
+    private val cloudSyncSupabaseAnonKey = mutableStateOf("")
+    private val cloudSyncInProgress = mutableStateOf(false)
+    private val cloudSyncLastSyncedEpochMs = mutableLongStateOf(0L)
+    private val cloudSyncError = mutableStateOf<String?>(null)
 
     @Composable
     override fun uiState(): SettingsState {
@@ -88,7 +108,14 @@ class SettingsViewModel @Inject constructor(
             startDateOfMonth = getStartDateOfMonth(),
             progressState = getProgressState(),
             hideIncome = getHideIncome(),
-            languageOptionVisible = isLanguageOptionVisible()
+            languageOptionVisible = isLanguageOptionVisible(),
+            smsAutoImportEnabled = smsAutoImportEnabled.value,
+            cloudSyncEnabled = cloudSyncEnabled.value,
+            cloudSyncSupabaseUrl = cloudSyncSupabaseUrl.value,
+            cloudSyncSupabaseAnonKey = cloudSyncSupabaseAnonKey.value,
+            cloudSyncInProgress = cloudSyncInProgress.value,
+            cloudSyncLastSyncedEpochMs = cloudSyncLastSyncedEpochMs.longValue.takeIf { it > 0 },
+            cloudSyncError = cloudSyncError.value,
         )
     }
 
@@ -102,6 +129,20 @@ class SettingsViewModel @Inject constructor(
         initializeHideIncome()
         initializeTransfersAsIncomeExpense()
         initializeStartDateOfMonth()
+        initializeSmsAutoImport()
+        initializeCloudSync()
+    }
+
+    private suspend fun initializeSmsAutoImport() {
+        smsAutoImportEnabled.value = dataStore.data.first()[DatastoreKeys.SMS_AUTO_IMPORT_ENABLED] ?: false
+    }
+
+    private suspend fun initializeCloudSync() {
+        val prefs = cloudSyncSettings.current()
+        cloudSyncEnabled.value = prefs.enabled
+        cloudSyncSupabaseUrl.value = prefs.supabaseUrl
+        cloudSyncSupabaseAnonKey.value = prefs.supabaseAnonKey
+        cloudSyncLastSyncedEpochMs.longValue = prefs.lastSyncedEpochMs ?: 0L
     }
 
     private suspend fun initializeCurrency() {
@@ -233,6 +274,74 @@ class SettingsViewModel @Inject constructor(
             SettingsEvent.DeleteCloudUserData -> deleteCloudUserData()
             SettingsEvent.DeleteAllUserData -> deleteAllUserData()
             SettingsEvent.SwitchLanguage -> switchLanguage()
+
+            is SettingsEvent.SetSmsAutoImportEnabled -> setSmsAutoImportEnabled(event.enabled)
+            is SettingsEvent.SetCloudSyncEnabled -> setCloudSyncEnabled(event.enabled)
+            is SettingsEvent.SetCloudSyncCredentials -> setCloudSyncCredentials(
+                event.url,
+                event.anonKey
+            )
+
+            SettingsEvent.TriggerCloudSyncNow -> triggerCloudSyncNow()
+            SettingsEvent.TriggerCloudRestore -> triggerCloudRestore()
+        }
+    }
+
+    private fun setSmsAutoImportEnabled(enabled: Boolean) {
+        smsAutoImportEnabled.value = enabled
+
+        viewModelScope.launch {
+            dataStore.edit { it[DatastoreKeys.SMS_AUTO_IMPORT_ENABLED] = enabled }
+        }
+    }
+
+    private fun setCloudSyncEnabled(enabled: Boolean) {
+        cloudSyncEnabled.value = enabled
+
+        viewModelScope.launch {
+            cloudSyncSettings.setEnabled(enabled)
+            if (enabled) {
+                cloudSyncTrigger.schedulePeriodic()
+            } else {
+                cloudSyncTrigger.cancelPeriodic()
+            }
+        }
+    }
+
+    private fun setCloudSyncCredentials(url: String, anonKey: String) {
+        cloudSyncSupabaseUrl.value = url
+        cloudSyncSupabaseAnonKey.value = anonKey
+
+        viewModelScope.launch {
+            cloudSyncSettings.setCredentials(url, anonKey)
+        }
+    }
+
+    private fun triggerCloudSyncNow() {
+        viewModelScope.launch {
+            cloudSyncInProgress.value = true
+            cloudSyncError.value = null
+            cloudSyncRepository.pushAll().fold(
+                ifLeft = { error -> cloudSyncError.value = error },
+                ifRight = {
+                    cloudSyncLastSyncedEpochMs.longValue = System.currentTimeMillis()
+                }
+            )
+            cloudSyncInProgress.value = false
+        }
+    }
+
+    private fun triggerCloudRestore() {
+        viewModelScope.launch {
+            cloudSyncInProgress.value = true
+            cloudSyncError.value = null
+            cloudSyncRepository.pullAll().fold(
+                ifLeft = { error -> cloudSyncError.value = error },
+                ifRight = {
+                    cloudSyncLastSyncedEpochMs.longValue = System.currentTimeMillis()
+                }
+            )
+            cloudSyncInProgress.value = false
         }
     }
 

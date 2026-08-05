@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -88,6 +89,9 @@ fun BoxWithConstraintsScope.AccountModal(
     var includeInBalance by remember(modal) {
         mutableStateOf(account?.includeInBalance ?: true)
     }
+    var bankAccountSuffix by remember(modal) {
+        mutableStateOf(account?.bankAccountSuffix ?: "")
+    }
 
     var amountModalVisible by remember { mutableStateOf(false) }
     var currencyModalVisible by remember { mutableStateOf(false) }
@@ -115,6 +119,7 @@ fun BoxWithConstraintsScope.AccountModal(
                     icon = icon,
                     amount = amount,
                     includeInBalance = includeInBalance,
+                    bankAccountSuffix = bankAccountSuffix,
 
                     onCreateAccount = onCreateAccount,
                     onEditAccount = onEditAccount,
@@ -163,6 +168,25 @@ fun BoxWithConstraintsScope.AccountModal(
         IvyColorPicker(
             selectedColor = color,
             onColorSelected = { color = it }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedTextField(
+            value = bankAccountSuffix,
+            onValueChange = { bankAccountSuffix = it.take(6) },
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .testTag("account_modal_bank_suffix"),
+            label = { Text("Bank a/c or card last digits (optional)") },
+            placeholder = { Text("e.g. 5555") },
+            singleLine = true
+        )
+
+        Text(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            text = "Used to auto-match this account when a bank SMS is imported",
+            style = UI.typo.c.style(color = Gray)
         )
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -221,6 +245,7 @@ fun BoxWithConstraintsScope.AccountModal(
                 icon = icon,
                 amount = newAmount,
                 includeInBalance = includeInBalance,
+                bankAccountSuffix = bankAccountSuffix,
 
                 onCreateAccount = onCreateAccount,
                 onEditAccount = onEditAccount,
@@ -263,11 +288,13 @@ private fun save(
     icon: String?,
     amount: Double,
     includeInBalance: Boolean,
+    bankAccountSuffix: String,
 
     onCreateAccount: (CreateAccountData) -> Unit,
     onEditAccount: (Account, balance: Double) -> Unit,
     dismiss: () -> Unit
 ) {
+    val suffixOrNull = bankAccountSuffix.trim().takeIf { it.isNotEmpty() }
     if (account != null) {
         onEditAccount(
             account.copy(
@@ -275,7 +302,8 @@ private fun save(
                 currency = currency,
                 includeInBalance = includeInBalance,
                 icon = icon,
-                color = color.toArgb()
+                color = color.toArgb(),
+                bankAccountSuffix = suffixOrNull
             ),
             amount
         )
@@ -287,7 +315,8 @@ private fun save(
                 color = color,
                 icon = icon,
                 balance = amount,
-                includeBalance = includeInBalance
+                includeBalance = includeInBalance,
+                bankAccountSuffix = suffixOrNull
             )
         )
     }

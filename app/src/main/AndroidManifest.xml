@@ -16,6 +16,9 @@
         android:requestLegacyExternalStorage="true" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Used to auto-import transactions from bank SMS notifications (opt-in, see Settings) -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
     <!--  Show activity over the lockscreen  -->
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -91,6 +94,15 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/wallet_balance_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".sms.SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
         </receiver>
 
         <service

@@ -26,6 +26,11 @@ data class AccountEntity(
     @SerialName("includeInBalance")
     val includeInBalance: Boolean = true,
 
+    // Last digits of the linked bank account/card number (e.g. "5555"), used to match
+    // incoming bank SMS notifications to this account for auto-import.
+    @SerialName("bankAccountSuffix")
+    val bankAccountSuffix: String? = null,
+
     @Deprecated("Obsolete field used for cloud sync. Can't be deleted because of backwards compatibility")
     @SerialName("isSynced")
     val isSynced: Boolean = false,

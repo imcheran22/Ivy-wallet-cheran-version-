@@ -13,5 +13,12 @@ data class SettingsState(
     val treatTransfersAsIncomeExpense: Boolean,
     val startDateOfMonth: String,
     val progressState: Boolean,
-    val languageOptionVisible: Boolean
+    val languageOptionVisible: Boolean,
+    val smsAutoImportEnabled: Boolean = false,
+    val cloudSyncEnabled: Boolean = false,
+    val cloudSyncSupabaseUrl: String = "",
+    val cloudSyncSupabaseAnonKey: String = "",
+    val cloudSyncInProgress: Boolean = false,
+    val cloudSyncLastSyncedEpochMs: Long? = null,
+    val cloudSyncError: String? = null,
 )
