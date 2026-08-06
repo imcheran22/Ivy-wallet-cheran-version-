@@ -36,10 +36,6 @@ import androidx.compose.ui.unit.sp
 private const val START_ANGLE = 135f
 private const val SWEEP_ANGLE = 270f
 
-/**
- * The big level dial. A 270° arc rather than a full ring so the gap at the
- * bottom can carry the status line, the way Pixel's own circular indicators do.
- */
 @Composable
 fun BatteryGauge(
     level: Int,
@@ -60,14 +56,15 @@ fun BatteryGauge(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1.25f),
+            .aspectRatio(1.15f),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(modifier = Modifier.fillMaxWidth().aspectRatio(1f).padding(24.dp)) {
-            val stroke = size.minDimension * 0.09f
-            val inset = stroke / 2f
-            val arcSize = Size(size.width - stroke, size.height - stroke)
-            val topLeft = Offset(inset, inset)
+        Canvas(modifier = Modifier.fillMaxWidth().aspectRatio(1f).padding(36.dp)) {
+            val stroke = size.minDimension * 0.06f
+            val glowWidth = stroke * 2.8f
+            val halfGlow = glowWidth / 2f
+            val arcSize = Size(size.width - glowWidth, size.height - glowWidth)
+            val topLeft = Offset(halfGlow, halfGlow)
 
             drawArc(
                 color = trackColor,
@@ -79,17 +76,33 @@ fun BatteryGauge(
                 style = Stroke(width = stroke, cap = StrokeCap.Round),
             )
 
-            drawArc(
-                brush = Brush.sweepGradient(
-                    listOf(accentColor.copy(alpha = 0.55f), accentColor, accentColor)
-                ),
-                startAngle = START_ANGLE,
-                sweepAngle = SWEEP_ANGLE * animatedLevel,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
-            )
+            if (animatedLevel > 0f) {
+                drawArc(
+                    color = accentColor.copy(alpha = 0.12f),
+                    startAngle = START_ANGLE,
+                    sweepAngle = SWEEP_ANGLE * animatedLevel,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = glowWidth, cap = StrokeCap.Round),
+                )
+
+                drawArc(
+                    brush = Brush.sweepGradient(
+                        listOf(
+                            accentColor.copy(alpha = 0.5f),
+                            accentColor,
+                            accentColor,
+                        )
+                    ),
+                    startAngle = START_ANGLE,
+                    sweepAngle = SWEEP_ANGLE * animatedLevel,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = stroke, cap = StrokeCap.Round),
+                )
+            }
         }
 
         Column(
@@ -102,29 +115,29 @@ fun BatteryGauge(
                         imageVector = Icons.Rounded.Bolt,
                         contentDescription = null,
                         tint = accentColor,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(28.dp),
                     )
                 }
                 Text(
                     text = "$level",
-                    fontSize = 68.sp,
+                    fontSize = 52.sp,
                     fontWeight = FontWeight.Light,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "%",
-                    fontSize = 24.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Normal,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 18.dp),
+                    modifier = Modifier.padding(top = 12.dp),
                 )
             }
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
 
             Text(
                 text = statusLabel,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 color = accentColor,
                 textAlign = TextAlign.Center,
             )
@@ -133,10 +146,10 @@ fun BatteryGauge(
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = detailLabel,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 32.dp),
+                    modifier = Modifier.padding(horizontal = 48.dp),
                 )
             }
         }
