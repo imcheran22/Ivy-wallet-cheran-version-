@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,14 +32,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
-/**
- * The rounded container every section on the battery screen sits in - Pixel's
- * settings pages group related rows into one tonal card rather than drawing
- * dividers, so everything here does the same.
- */
 @Composable
 fun BatterySection(
     title: String,
@@ -75,22 +73,18 @@ fun BatterySection(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
             ),
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 content = content,
             )
         }
     }
 }
 
-/**
- * A single metric. Two of these side by side is the densest layout that still
- * stays legible at a glance.
- */
 @Composable
 fun StatTile(
     label: String,
@@ -101,7 +95,7 @@ fun StatTile(
     caption: String? = null,
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth().fillMaxHeight(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -145,7 +139,6 @@ fun StatTile(
     }
 }
 
-/** Two stat tiles per row, sized evenly. */
 @Composable
 fun StatTileRow(
     left: @Composable () -> Unit,
@@ -153,15 +146,16 @@ fun StatTileRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(modifier = Modifier.weight(1f)) { left() }
-        Box(modifier = Modifier.weight(1f)) { right?.invoke() }
+        Box(modifier = Modifier.weight(1f).fillMaxHeight()) { left() }
+        Box(modifier = Modifier.weight(1f).fillMaxHeight()) { right?.invoke() }
     }
 }
 
-/** A label/value line, for the dense "raw readings" lists. */
 @Composable
 fun MetricRow(
     label: String,
@@ -184,7 +178,7 @@ fun MetricRow(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = valueColor ?: MaterialTheme.colorScheme.onSurface,
-            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            textAlign = TextAlign.End,
         )
     }
 }
@@ -263,7 +257,6 @@ fun SettingSliderRow(
     }
 }
 
-/** A horizontal share bar, used by the per-app drain list. */
 @Composable
 fun ShareBar(
     fraction: Float,
@@ -281,7 +274,6 @@ fun ShareBar(
     )
 }
 
-/** Explains a limitation inline instead of letting the user guess. */
 @Composable
 fun InfoNote(
     text: String,
@@ -331,7 +323,7 @@ fun EmptyState(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 24.dp),
         )
     }
