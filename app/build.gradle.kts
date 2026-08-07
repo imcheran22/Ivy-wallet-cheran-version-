@@ -54,10 +54,15 @@ android {
 
             isDebuggable = false
             isDefault = false
+            isCrunchPngs = true
 
             signingConfig = signingConfigs.getByName("release")
 
             resValue("string", "app_name", "Ivy Wallet")
+
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
         }
 
         debug {

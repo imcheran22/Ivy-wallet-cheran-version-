@@ -5,12 +5,14 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import okhttp3.ConnectionSpec
 import timber.log.Timber
 import javax.inject.Singleton
 
@@ -22,7 +24,13 @@ object KtorClientModule {
     fun provideKtorClient(
         json: Json
     ): HttpClient {
-        return HttpClient {
+        return HttpClient(OkHttp) {
+            engine {
+                config {
+                    connectionSpecs(listOf(ConnectionSpec.MODERN_TLS))
+                }
+            }
+
             install(ContentNegotiation) {
                 json(json)
             }

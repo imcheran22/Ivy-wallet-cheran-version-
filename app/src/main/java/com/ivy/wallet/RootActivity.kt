@@ -50,6 +50,8 @@ import com.ivy.navigation.NavigationRoot
 import com.ivy.ui.R
 import com.ivy.ui.time.TimeFormatter
 import com.ivy.ui.time.impl.DateTimePicker
+import com.ivy.wallet.security.SecurityManager
+import com.ivy.wallet.security.SecurityWarningScreen
 import com.ivy.wallet.ui.applocked.AppLockedScreen
 import com.ivy.widget.balance.WalletBalanceWidgetReceiver
 import com.ivy.widget.transaction.AddTransactionWidget
@@ -83,6 +85,9 @@ class RootActivity : AppCompatActivity(), RootScreen {
     @Inject
     lateinit var dateTimePicker: DateTimePicker
 
+    @Inject
+    lateinit var securityManager: SecurityManager
+
     private lateinit var createFileLauncher: ActivityResultLauncher<String>
     private lateinit var onFileCreated: (fileUri: Uri) -> Unit
 
@@ -104,40 +109,60 @@ class RootActivity : AppCompatActivity(), RootScreen {
                 viewModel.start(isSystemInDarkTheme, intent)
             }
 
-            val appLocked by viewModel.appLocked.collectAsState()
-            when (appLocked) {
-                null -> { // display nothing
-                }
-                true -> {
-                    IvyUI(
-                        design = appDesign(ivyContext),
-                        timeConverter = timeConverter,
-                        timeProvider = timeProvider,
-                        timeFormatter = timeFormatter,
-                    ) {
-                        AppLockedScreen(
-                            onShowOSBiometricsModal = {
-                                authenticateWithOSBiometricsModal(
-                                    biometricPromptCallback = viewModel.handleBiometricAuthResult()
-                                )
-                            },
-                            onContinueWithoutAuthentication = {
-                                viewModel.unlockApp()
-                            }
-                        )
-                    }
-                }
+            val securityStatus = if (!BuildConfig.DEBUG) {
+                securityManager.checkSecurity()
+            } else {
+                null
+            }
 
-                false -> {
-                    NavigationRoot(navigation = navigation) { screen ->
+            val securityCleared = androidx.compose.runtime.remember {
+                androidx.compose.runtime.mutableStateOf(
+                    securityStatus == null || (!securityStatus.hasSecurityThreat && !securityStatus.hasWarnings)
+                )
+            }
+
+            if (securityStatus != null && !securityCleared.value) {
+                SecurityWarningScreen(
+                    status = securityStatus,
+                    onAcknowledge = { securityCleared.value = true },
+                    onExit = { finish() },
+                )
+            } else {
+                val appLocked by viewModel.appLocked.collectAsState()
+                when (appLocked) {
+                    null -> { // display nothing
+                    }
+                    true -> {
                         IvyUI(
                             design = appDesign(ivyContext),
-                            includeSurface = screen?.isLegacy ?: true,
                             timeConverter = timeConverter,
                             timeProvider = timeProvider,
                             timeFormatter = timeFormatter,
                         ) {
-                            IvyNavGraph(screen)
+                            AppLockedScreen(
+                                onShowOSBiometricsModal = {
+                                    authenticateWithOSBiometricsModal(
+                                        biometricPromptCallback = viewModel.handleBiometricAuthResult()
+                                    )
+                                },
+                                onContinueWithoutAuthentication = {
+                                    viewModel.unlockApp()
+                                }
+                            )
+                        }
+                    }
+
+                    false -> {
+                        NavigationRoot(navigation = navigation) { screen ->
+                            IvyUI(
+                                design = appDesign(ivyContext),
+                                includeSurface = screen?.isLegacy ?: true,
+                                timeConverter = timeConverter,
+                                timeProvider = timeProvider,
+                                timeFormatter = timeFormatter,
+                            ) {
+                                IvyNavGraph(screen)
+                            }
                         }
                     }
                 }
@@ -297,7 +322,13 @@ class RootActivity : AppCompatActivity(), RootScreen {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (viewModel.isAppLockEnabled() && !hasFocus) {
+        if (!BuildConfig.DEBUG) {
+            // Always prevent screenshots/screen recording in release builds for financial data safety
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        } else if (viewModel.isAppLockEnabled() && !hasFocus) {
             window.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
                 WindowManager.LayoutParams.FLAG_SECURE
