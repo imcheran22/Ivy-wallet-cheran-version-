@@ -1,8 +1,188 @@
-# Notification Mirror
+>[!IMPORTANT]
+>**🚨 Notice: Project No Longer Maintained 🚨**
+>
+>As of **Nov 5th, 2024**, this project is no longer maintained by the original developers. No further updates, bug fixes, or support will be provided.
+>
+>- **Pull Requests and Issues**: We will not be reviewing or merging pull requests, nor responding to issues or discussions.
+>
+>- **Forking and Future Development**: In accordance with the [GPL-3.0 License](LICENSE), you are encouraged to **fork this repository** to continue development independently. You are free to modify, distribute, and release your own versions under the same license.
+>
+>- **Disclaimer of Liability**:
+>  - **"As-Is" Basis**: This software is provided on an "as-is" basis without any warranties or conditions of any kind, either express or implied.
+>  - **No Liability**: The original maintainers shall not be liable for any claims, damages, or other liabilities arising from the use, modification, or distribution of this software.
+>  - **User Responsibility**: Users and developers who choose to use or fork this project assume all risks and responsibilities associated with its use and further development.
+>
+>For more information, please refer to the [LICENSE](LICENSE) file.
 
-An Android app that mirrors notifications from a secondary phone to a primary phone using Firebase Cloud Messaging. Both phones run the same app — one in **Sender** mode, the other in **Receiver** mode.
+[![Latest Release](https://img.shields.io/github/v/release/Ivy-Apps/ivy-wallet)](https://github.com/Ivy-Apps/ivy-wallet/releases)
+[![APK](https://github.com/Ivy-Apps/ivy-wallet/actions/workflows/apk.yml/badge.svg)](https://github.com/Ivy-Apps/ivy-wallet/actions/workflows/apk.yml)
+[![Telegram Group](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/+ETavgioAvWg4NThk)
 
-## Architecture
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![GitHub Repo stars](https://img.shields.io/github/stars/Ivy-Apps/ivy-wallet?style=social)](https://github.com/Ivy-Apps/ivy-wallet/stargazers)
+[![Fork Ivy Wallet](https://img.shields.io/github/forks/Ivy-Apps/ivy-wallet?logo=github&style=social)](https://github.com/Ivy-Apps/ivy-wallet/fork)
+
+# [Ivy Wallet: money manager](https://play.google.com/store/apps/details?id=com.ivy.wallet)
+
+|                                                                                                            |                                                                                                            |                                                                                                            |                                                                                                            |
+|:----------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------:|
+| ![1](https://user-images.githubusercontent.com/5564499/189540998-4d6cdcd3-ab4d-40f7-85d4-c82fe8a017d1.png) | ![2](https://user-images.githubusercontent.com/5564499/189541011-1ebbd8b6-50fe-432a-91e2-59206efe99ce.png) | ![3](https://user-images.githubusercontent.com/5564499/189541023-35e7f163-d639-4466-9a91-c56890d5a28e.png) | ![4](https://user-images.githubusercontent.com/5564499/189541027-d352314c-fd5c-43eb-82ad-4aba14c7b0fa.png) |
+| ![5](https://user-images.githubusercontent.com/5564499/189541030-1a0d7948-33af-420b-b126-936d0211c93f.png) | ![6](https://user-images.githubusercontent.com/5564499/189541035-621c4511-5ec7-4d3f-b08e-925d8da95472.png) | ![7](https://user-images.githubusercontent.com/5564499/189541127-7adf5bfa-0652-461c-80f1-076b7179eb6c.png) | ![8](https://user-images.githubusercontent.com/5564499/189541040-7cab633e-be4c-40b2-a2c6-890a15edf805.png) |
+
+Ivy Wallet is a free and open source **money management android app**. It's written using **100% Kotlin and Jetpack Compose**. It's designed to help you keep track of your personal finances with ease.
+
+Think of Ivy Wallet as a manual expense tracker that tries to replace the good old spreadsheet for managing your finances.
+
+**Do you know? Ask yourself.**
+
+1) How much money do I have in total?
+
+2) How much did I spend this month and what did I spend it on?
+
+3) How much can I spend and still meet my financial goals?
+
+A money management app can help you answer these questions.
+
+Ivy Wallet may lack some of the features you're looking for, but it truly shines in its user interface and experience, as well as its simplicity and customization options. This was recognized in the ["Top/Best Android App in 2021/2022 charts"](https://youtube.com/playlist?list=PLguJN0waG1-eSzKMuFMIULrR3MlqJ3cAE) by the YouTube tech community.
+
+<a href='https://play.google.com/store/apps/details?id=com.ivy.wallet&utm_source=github&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width="323" height="125"/></a>
+
+> Join our **[private Telegram Community](https://t.me/+ETavgioAvWg4NThk)**.
+
+> To support our free open source project, please give it a star. ⭐
+> This means a lot to us. Thank you so much! [![GitHub Repo stars](https://img.shields.io/github/stars/Ivy-Apps/ivy-wallet?style=social)](https://github.com/Ivy-Apps/ivy-wallet/stargazers)
+
+## Project Requirements
+
+- Java 17+
+- The **latest stable** Android Studio (for easy install use [JetBrains Toolbox](https://www.jetbrains.com/toolbox-app/))
+
+### Initialize the project
+
+**1. Fork and clone the repo**
+
+Instructions in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+### Need help?
+
+Join our Telegram community and drop a message in the "Development" topic.
+
+[![Telegram Group](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/+ETavgioAvWg4NThk)
+
+## Learning Materials
+
+Ivy Wallet is a great place to code and learn. That's why we also link to great learning materials (books, articles, videos), check them out in **[docs/resources 📚](docs/resources/)**.
+
+Make sure to check out our short **[Developer Guidelines 🏗️](docs/Guidelines.md)** to learn more about the technical side of the Ivy Wallet.
+
+## Tech Stack
+
+### Core
+
+- 100% [Kotlin](https://kotlinlang.org/)
+- 100% [Jetpack Compose](https://developer.android.com/jetpack/compose)
+- [Material3 design](https://m3.material.io/) (UI components)
+- [Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) (structured concurrency)
+- [Kotlin Flow](https://kotlinlang.org/docs/flow.html) (reactive data stream)
+- [Hilt](https://dagger.dev/hilt/) (DI)
+- [ArrowKt](https://arrow-kt.io/) (functional programming)
+
+
+### Testing
+- [JUnit4](https://github.com/junit-team/junit4) (test framework, compatible with Android)
+- [Kotest](https://kotest.io/) (unit test assertions)
+- [Paparazzi](https://github.com/cashapp/paparazzi) (screenshot testing)
+
+### Local Persistence
+- [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) (key-value storage)
+- [Room DB](https://developer.android.com/training/data-storage/room) (SQLite ORM)
+
+### Networking
+- [Ktor client](https://ktor.io/docs/getting-started-ktor-client.html) (HTTP client)
+- [Kotlinx Serialization](https://github.com/Kotlin/kotlinx.serialization) (JSON serialization)
+
+### Build & CI
+- [Gradle KTS](https://docs.gradle.org/current/userguide/kotlin_dsl.html) (Kotlin DSL)
+- [Gradle convention plugins](https://docs.gradle.org/current/samples/sample_convention_plugins.html) (build logic)
+- [Gradle version catalogs](https://developer.android.com/build/migrate-to-catalogs) (dependencies versions)
+- [GitHub Actions](https://github.com/Ivy-Apps/ivy-wallet/actions) (CI/CD)
+- [Fastlane](https://fastlane.tools/) (uploads the app to the Google Play Store)
+
+### Other
+- [Firebase Crashlytics](https://firebase.google.com/products/crashlytics) (stability monitoring)
+- [Timber](https://github.com/JakeWharton/timber) (logging)
+- [Detekt](https://github.com/detekt/detekt) (linter)
+- [Ktlint](https://github.com/pinterest/ktlint) (linter)
+- [Slack's compose-lints](https://slackhq.github.io/compose-lints/) (linter)
+
+## Contribute
+
+**Want to contribute?** See **[CONTRIBUTING.md](/CONTRIBUTING.md)** [![Fork Ivy Wallet](https://img.shields.io/github/forks/Ivy-Apps/ivy-wallet?logo=github&style=social)](https://github.com/Ivy-Apps/ivy-wallet/fork)
+
+### Contributors Wall:
+
+<a href="https://github.com/ILIYANGERMANOV/ivy-wallet/graphs/contributors">
+  <img alt="contributors graph" src="https://contrib.rocks/image?repo=Ivy-Apps/ivy-wallet" />
+</a>
+<br>
+<br>
+
+_Note: It may take up to 24 hours for the [contrib.rocks](https://contrib.rocks/preview?repo=Ivy-Apps%2Fivy-wallet) plugin to update._ 
+
+**P.S.** You'll also be recognized in a special "Contributors" section. We salute you! 👏
+
+## Creative Contributors
+
+Folks that helped Ivy Wallet in a non-dev creative ways that can't be captured on GitHub.
+
+### Creative Contributors Wall:
+
+<!-- <div align="center">
+  <a href="URL_TO_CONTRIBUTION">
+    <img src="URL_TO_PERSONS_PHOTO" width="100px;" alt="PERSON'S PHOTO"/><br>
+    <strong>USERNAME</strong><br>
+    <small>MESSAGE_FOR_THEIR_CONTRIBUTION</small>
+  </a>
+</div> -->
+
+<div style="text-align: center">
+    <img src="https://avatars.githubusercontent.com/u/62771583?v=4" width="100px;" alt="Stefan Ilijev - Desinger"/><br>
+    <strong>Stefan Ilijev</strong><br>
+    <small>Co-founder and designer of Ivy Wallet. Created the <a href="https://www.figma.com/file/kSwIa07jcHEHZXo6rzx7dn/Design-System?node-id=0%3A1&mode=dev">Ivy design system</a>.</small>
+    <br/>
+    <br/>
+</div>
+
+<div style="text-align: center">
+    <img src="https://avatars.githubusercontent.com/u/86833171?v=4" width="100px;" alt="Aditya [ADX]"/><br>
+    <strong><a href="https://github.com/adx69" >Aditya</a> </strong><br>
+    <br/>
+</div>
+
+<div style="text-align: center">
+    <img src="https://avatars.githubusercontent.com/u/130169485?v=4" width="100px;" alt="Shymom [SSI]"/><br>
+    <strong><a href="https://github.com/SHYMOM" >Shymom</a> </strong><br>
+    <br/>
+</div>
+
+
+## Community Projects
+
+> ⚠️ Disclaimer: The community projects listed are independently developed and not affiliated with Ivy Apps Ltd. Consequently, we cannot vouch for their functionality, security or intentions. Your engagement with these projects is solely at your own discretion and risk. Ivy Apps Ltd explicitly disclaims any warranties, express or implied, and shall not be held liable for any damages or losses resulting from the use of these community-developed projects.
+> 
+### [ivy-wallet-web](https://github.com/pratikkabade/ivy-wallet-web) by [Pratik Kabade](https://github.com/pratikkabade)
+
+This community-developed project allows users to conveniently access Ivy Wallet through their **web browsers**, ensuring a smooth experience across multiple platforms.
+- [GitHub URL](https://github.com/pratikkabade/ivy-wallet-web)
+- [Web app URL](https://ivy-wallet-web.vercel.app/)
+
+---
+
+## Notification Mirror Feature
+
+The **Notification Mirror** feature lets you forward notifications from a secondary phone to your primary phone using Firebase Cloud Messaging. Both phones run this same app — one in **Sender** mode, the other in **Receiver** mode.
+
+### Architecture
 
 ```
 Secondary Phone (Sender)              Cloud                    Primary Phone (Receiver)
@@ -12,26 +192,19 @@ Secondary Phone (Sender)              Cloud                    Primary Phone (Re
 └─────────────────────┘              └──────────────┘          └─────────────────────┘
 ```
 
-### Feature isolation
+### Feature Isolation
 
-This app is designed to coexist with other features sharing the same Firebase project and FCM token:
-
-- All FCM messages include `"feature": "notif_mirror"` — the `FirebaseMessagingService` dispatches on this key first, so other feature handlers are never invoked for mirror payloads and vice versa.
+- All FCM messages include `"feature": "notif_mirror"` — the `IvyFcmService` dispatches on this key first, so wallet/battery handlers are never invoked for mirror payloads.
 - Mirrored notifications use a dedicated FCM topic (`notif_mirror_<id>`) and a dedicated `NotificationChannel` (`mirrored_notifications`).
 - All settings are stored in a separate `SharedPreferences` file (`notif_mirror_prefs`).
-- The sender's `NotificationListenerService` skips its own package's notifications to avoid loops.
+- The sender's `NotificationListenerService` skips its own package to avoid loops.
+- To add handlers for other features, edit `app/.../fcm/IvyFcmService.kt` and add branches in the `when (feature)` block.
 
-To add handlers for other features, edit `NotifMirrorFcmService.kt` and add branches in the `when (feature)` block.
+### Setup
 
-## Setup
+#### 1. Deploy the Cloud Function
 
-### 1. Create a Firebase project
-
-1. Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project (or use an existing one).
-2. Add an Android app with package name `com.notifmirror`.
-3. Download the generated `google-services.json` and replace `app/google-services.json` with it.
-
-### 2. Deploy the Cloud Function
+The Cloud Function source is in `cloud-functions/`:
 
 ```bash
 cd cloud-functions
@@ -42,83 +215,39 @@ cd functions && npm install && cd ..
 firebase deploy --only functions
 ```
 
-Copy the deployed function URL (shown in the deploy output) — you'll enter it in the app on the Sender phone.
+Copy the deployed function URL — you'll enter it in the app on the Sender phone.
 
-### 3. Generate a signing keystore
+#### 2. Build & Install
 
-```bash
-keytool -genkey -v -keystore release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias mykey
-```
-
-### 4. Add GitHub Secrets
-
-In your repository's **Settings → Secrets and variables → Actions**, add:
+The existing `apk.yml` workflow builds a demo APK automatically. For a signed release APK, configure GitHub Secrets:
 
 | Secret | Value |
 |--------|-------|
-| `KEYSTORE_BASE64` | `base64 -w0 release-key.jks` (base64-encode the keystore file) |
-| `KEYSTORE_PASSWORD` | The keystore password you chose |
-| `KEY_ALIAS` | `mykey` (or whatever alias you used) |
-| `KEY_PASSWORD` | The key password you chose |
+| `KEYSTORE_BASE64` | Base64-encoded keystore (`base64 -w0 release-key.jks`) |
+| `KEYSTORE_PASSWORD` | The keystore password |
+| `KEY_ALIAS` | The key alias |
+| `KEY_PASSWORD` | The key password |
 
-### 5. Build the APK
+Then trigger the **Build Signed Release APK** workflow from the Actions tab.
 
-Push to `main` or trigger the workflow manually from the **Actions** tab. The signed APK will be available as a workflow artifact named `notif-mirror-release`.
-
-### 6. Install on both phones
-
-1. Download the APK artifact from GitHub Actions onto each phone (e.g., via browser).
-2. On each phone, enable **Install unknown apps** for the app you used to download (e.g., Chrome).
-3. Install the APK.
-4. Open the app and follow the setup wizard:
+#### 3. Configure on Both Phones
 
 **On the Sender (secondary phone):**
-- Choose **Sender** mode.
-- Generate a Topic ID and note it down.
-- Enter the Cloud Function URL from step 2.
-- Grant **Notification Access** when prompted (the app deep-links to the correct settings page).
-- Allow the battery optimization exemption when prompted.
+- Open the app → More Menu → **Notif Mirror**
+- Choose **Sender** mode
+- Generate a Topic ID and note it down
+- Enter the Cloud Function URL
+- Grant **Notification Access** when prompted
+- Allow the battery optimization exemption
 
 **On the Receiver (primary phone):**
-- Choose **Receiver** mode.
-- Enter the **same Topic ID** from the Sender.
-- Allow the battery optimization exemption when prompted.
+- Open the app → More Menu → **Notif Mirror**
+- Choose **Receiver** mode
+- Enter the **same Topic ID** from the Sender
+- Allow the battery optimization exemption
 
-That's it — notifications from the secondary phone will now appear on the primary phone.
+### Sideloading
 
-## Permissions
-
-The app requests only what it needs:
-
-- **Notification Access** (Sender only): to read notifications from other apps. Granted manually via Android Settings.
-- **POST_NOTIFICATIONS** (Android 13+): to display mirrored notifications on the Receiver.
-- **INTERNET**: to communicate with the Cloud Function and FCM.
-- **FOREGROUND_SERVICE**: to keep the listener alive in the background.
-- **REQUEST_IGNORE_BATTERY_OPTIMIZATIONS**: to prompt (not force) the user to exempt the app from Doze.
-
-The app has a visible launcher icon, appears in Settings → Apps, and all permissions are granted transparently by the user.
-
-## Project structure
-
-```
-app/
-  src/main/
-    java/com/notifmirror/
-      NotifMirrorApp.kt              # Application class, notification channels
-      service/
-        NotifListenerService.kt      # Captures notifications (Sender)
-        NotifMirrorFcmService.kt     # FCM dispatcher + mirror handler (Receiver)
-        MirrorForegroundService.kt   # Persistent foreground service
-      ui/
-        MainActivity.kt             # Setup wizard + status screen
-      util/
-        MirrorPrefs.kt              # Namespaced SharedPreferences
-    res/
-      layout/activity_main.xml      # All setup screens in one layout
-    AndroidManifest.xml
-  google-services.json               # ← Replace with yours
-cloud-functions/
-  functions/index.js                  # Cloud Function source
-  firebase.json
-.github/workflows/build.yml          # CI workflow
-```
+1. Download the APK from GitHub Actions artifacts
+2. Enable "Install unknown apps" for your browser
+3. Install and follow the in-app setup wizard
