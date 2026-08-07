@@ -1,0 +1,9 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "notif-mirror",
+      "ignore": ["node_modules", ".git"]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+package com.notifmirror.util
+
+import android.content.Context
+import android.content.SharedPreferences
+
+class MirrorPrefs(context: Context) {
+
+    private val prefs: SharedPreferences =
+        context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
+
+    var mode: String?
+        get() = prefs.getString(KEY_MODE, null)
+        set(value) = prefs.edit().putString(KEY_MODE, value).apply()
+
+    var topicId: String?
+        get() = prefs.getString(KEY_TOPIC_ID, null)
+        set(value) = prefs.edit().putString(KEY_TOPIC_ID, value).apply()
+
+    var cloudFunctionUrl: String?
+        get() = prefs.getString(KEY_CLOUD_FUNCTION_URL, null)
+        set(value) = prefs.edit().putString(KEY_CLOUD_FUNCTION_URL, value).apply()
+
+    var lastSyncTime: Long
+        get() = prefs.getLong(KEY_LAST_SYNC, 0L)
+        set(value) = prefs.edit().putLong(KEY_LAST_SYNC, value).apply()
+
+    var setupComplete: Boolean
+        get() = prefs.getBoolean(KEY_SETUP_COMPLETE, false)
+        set(value) = prefs.edit().putBoolean(KEY_SETUP_COMPLETE, value).apply()
+
+    fun clear() {
+        prefs.edit().clear().apply()
+    }
+
+    companion object {
+        private const val PREFS_FILE = "notif_mirror_prefs"
+        private const val KEY_MODE = "notif_mirror_mode"
+        private const val KEY_TOPIC_ID = "notif_mirror_topic_id"
+        private const val KEY_CLOUD_FUNCTION_URL = "notif_mirror_cloud_function_url"
+        private const val KEY_LAST_SYNC = "notif_mirror_last_sync"
+        private const val KEY_SETUP_COMPLETE = "notif_mirror_setup_complete"
+
+        const val MODE_SENDER = "sender"
+        const val MODE_RECEIVER = "receiver"
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "notif-mirror-functions",
+  "description": "Cloud Function to relay mirrored notifications via FCM",
+  "main": "index.js",
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.2.0",
+    "firebase-functions": "^5.0.1"
+  }
+}

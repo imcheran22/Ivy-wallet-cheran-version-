@@ -1,0 +1,14 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+app/keystore.jks
+
+# Don't ignore google-services.json — it's a placeholder.
+# Users must replace it with their own Firebase config.
