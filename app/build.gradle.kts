@@ -41,6 +41,13 @@ android {
             keyAlias = System.getenv("SIGNING_KEY_ALIAS")
             keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
         }
+
+        create("local") {
+            storeFile = file("../local-release.jks")
+            storePassword = System.getenv("LOCAL_STORE_PASSWORD") ?: "ivywallet2025"
+            keyAlias = System.getenv("LOCAL_KEY_ALIAS") ?: "ivy-local"
+            keyPassword = System.getenv("LOCAL_KEY_PASSWORD") ?: "ivywallet2025"
+        }
     }
 
     buildTypes {
@@ -54,10 +61,15 @@ android {
 
             isDebuggable = false
             isDefault = false
+            isCrunchPngs = true
 
             signingConfig = signingConfigs.getByName("release")
 
             resValue("string", "app_name", "Ivy Wallet")
+
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
         }
 
         debug {
@@ -71,6 +83,29 @@ android {
 
             applicationIdSuffix = ".debug"
             resValue("string", "app_name", "Ivy Wallet Debug")
+        }
+
+        create("local") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+
+            matchingFallbacks.add("release")
+
+            isDebuggable = false
+            isDefault = false
+            isCrunchPngs = true
+
+            signingConfig = signingConfigs.getByName("local")
+
+            resValue("string", "app_name", "Ivy Wallet")
+
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
         }
 
         create("demo") {
