@@ -1,10 +1,15 @@
 package com.ivy.notifmirror.ui
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.ivy.navigation.screenScopedViewModel
 import com.google.firebase.messaging.FirebaseMessaging
 import java.text.SimpleDateFormat
@@ -108,6 +114,21 @@ private fun TopicSetupScreen(viewModel: NotifMirrorViewModel, state: MirrorUiSta
     val context = LocalContext.current
     val isSender = state.mode == "sender"
 
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* granted or not, continue setup */ }
+
+    fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     Text(
         text = "Topic Setup",
         style = MaterialTheme.typography.headlineMedium,
@@ -171,6 +192,7 @@ private fun TopicSetupScreen(viewModel: NotifMirrorViewModel, state: MirrorUiSta
             FirebaseMessaging.getInstance().subscribeToTopic(topicId)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
+                        requestNotificationPermissionIfNeeded()
                         if (isSender) {
                             requestBatteryExemption(context)
                             viewModel.goToNotifAccess()
@@ -239,6 +261,19 @@ private fun NotifAccessScreen(viewModel: NotifMirrorViewModel) {
 
 @Composable
 private fun StatusScreen(viewModel: NotifMirrorViewModel, state: MirrorUiState) {
+    val context = LocalContext.current
+    val hasNotifPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(
+            context, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    } else {
+        true
+    }
+
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { viewModel.refreshStatus() }
+
     val lastSyncText = if (state.lastSyncTime > 0) {
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             .format(Date(state.lastSyncTime))
@@ -283,6 +318,42 @@ private fun StatusScreen(viewModel: NotifMirrorViewModel, state: MirrorUiState) 
                 text = "Last sync: $lastSyncText",
                 style = MaterialTheme.typography.bodyLarge,
             )
+        }
+    }
+
+    if (!hasNotifPermission) {
+        Spacer(Modifier.height(16.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFFFF3E0),
+            ),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Notification permission not granted",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color(0xFFE65100),
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Mirrored notifications won't appear without this permission.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF333333),
+                )
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.material3.Button(
+                    onClick = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            notifPermissionLauncher.launch(
+                                Manifest.permission.POST_NOTIFICATIONS
+                            )
+                        }
+                    },
+                ) {
+                    Text("Grant Permission")
+                }
+            }
         }
     }
 
