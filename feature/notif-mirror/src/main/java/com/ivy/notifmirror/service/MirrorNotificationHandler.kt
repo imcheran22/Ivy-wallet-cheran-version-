@@ -24,14 +24,16 @@ object MirrorNotificationHandler {
 
         prefs.lastSyncTime = System.currentTimeMillis()
 
+        if (title.isEmpty() && text.isEmpty()) return
+
         val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
         val pendingIntent = PendingIntent.getActivity(
             context, 0,
             launchIntent ?: Intent(),
-            PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val notificationId = (sourceApp.hashCode() + timestamp).toInt()
+        val notificationId = System.currentTimeMillis().toInt()
 
         val notification = NotificationCompat.Builder(
             context, MirrorNotificationChannels.CHANNEL_MIRRORED
@@ -40,25 +42,14 @@ object MirrorNotificationHandler {
             .setContentTitle("$sourceApp: $title")
             .setContentText(text)
             .setSubText(sourceApp)
-            .setGroup("mirror_$sourceApp")
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
             .setWhen(timestamp)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .build()
-
-        val summaryNotification = NotificationCompat.Builder(
-            context, MirrorNotificationChannels.CHANNEL_MIRRORED
-        )
-            .setSmallIcon(R.drawable.ic_mirror_notification)
-            .setContentTitle(sourceApp)
-            .setGroup("mirror_$sourceApp")
-            .setGroupSummary(true)
-            .setAutoCancel(true)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .build()
 
         val manager = context.getSystemService(NotificationManager::class.java)
         manager.notify(notificationId, notification)
-        manager.notify(sourceApp.hashCode(), summaryNotification)
     }
 }
