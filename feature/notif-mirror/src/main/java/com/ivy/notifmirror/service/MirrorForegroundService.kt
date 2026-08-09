@@ -39,7 +39,7 @@ class MirrorForegroundService : Service() {
 
         return NotificationCompat.Builder(this, MirrorNotificationChannels.CHANNEL_SERVICE)
             .setSmallIcon(R.drawable.ic_mirror_notification)
-            .setContentTitle("Notification Mirror")
+            .setContentTitle("Couple Mirror")
             .setContentText("Running in $modeLabel mode")
             .setContentIntent(pendingIntent)
             .setOngoing(true)

@@ -59,13 +59,18 @@ fun NotifMirrorScreenImpl(
 @Composable
 private fun ModeSelectionScreen(viewModel: NotifMirrorViewModel) {
     Text(
-        text = "Notification Mirror",
+        text = "Couple Mirror",
         style = MaterialTheme.typography.headlineMedium,
     )
     Spacer(Modifier.height(8.dp))
     Text(
-        text = "Choose how this phone will be used:",
+        text = "Sync notifications and money transactions between two phones.",
         style = MaterialTheme.typography.bodyLarge,
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        text = "Choose how this phone will be used:",
+        style = MaterialTheme.typography.bodyMedium,
     )
     Spacer(Modifier.height(32.dp))
 
@@ -77,7 +82,8 @@ private fun ModeSelectionScreen(viewModel: NotifMirrorViewModel) {
     }
     Spacer(Modifier.height(4.dp))
     Text(
-        text = "Captures notifications and sends them to your primary phone.",
+        text = "Captures notifications and sends them to your primary phone. " +
+            "Transactions sync both ways.",
         style = MaterialTheme.typography.bodySmall,
     )
 
@@ -91,7 +97,8 @@ private fun ModeSelectionScreen(viewModel: NotifMirrorViewModel) {
     }
     Spacer(Modifier.height(4.dp))
     Text(
-        text = "Receives and displays notifications from your secondary phone.",
+        text = "Receives notifications from your secondary phone. " +
+            "Transactions sync both ways.",
         style = MaterialTheme.typography.bodySmall,
     )
 }
@@ -119,7 +126,7 @@ private fun TopicSetupScreen(viewModel: NotifMirrorViewModel, state: MirrorUiSta
     if (isSender) {
         TextButton(
             onClick = {
-                val id = "notif_mirror_" + UUID.randomUUID().toString().take(8)
+                val id = "couple_mirror_" + UUID.randomUUID().toString().take(8)
                 viewModel.updateTopicId(id)
             },
         ) {
@@ -136,21 +143,19 @@ private fun TopicSetupScreen(viewModel: NotifMirrorViewModel, state: MirrorUiSta
         singleLine = true,
     )
 
-    if (isSender) {
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = "Enter your Cloud Function URL (from Firebase deploy output):",
-            style = MaterialTheme.typography.bodySmall,
-        )
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = state.cloudFunctionUrl,
-            onValueChange = { viewModel.updateCloudFunctionUrl(it) },
-            label = { Text("Cloud Function URL") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-        )
-    }
+    Spacer(Modifier.height(16.dp))
+    Text(
+        text = "Enter your Relay Server URL (e.g. https://your-app.onrender.com):",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    Spacer(Modifier.height(8.dp))
+    OutlinedTextField(
+        value = state.cloudFunctionUrl,
+        onValueChange = { viewModel.updateCloudFunctionUrl(it) },
+        label = { Text("Relay Server URL") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+    )
 
     Spacer(Modifier.height(24.dp))
 
@@ -161,20 +166,24 @@ private fun TopicSetupScreen(viewModel: NotifMirrorViewModel, state: MirrorUiSta
                 Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                 return@Button
             }
-            if (!isSender) {
-                val topicId = state.topicId.trim()
-                FirebaseMessaging.getInstance().subscribeToTopic(topicId)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
+
+            val topicId = state.topicId.trim()
+            FirebaseMessaging.getInstance().subscribeToTopic(topicId)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        if (isSender) {
+                            requestBatteryExemption(context)
+                            viewModel.goToNotifAccess()
+                        } else {
                             requestBatteryExemption(context)
                             viewModel.completeSetup()
-                        } else {
-                            Toast.makeText(
-                                context, "Failed to subscribe", Toast.LENGTH_LONG
-                            ).show()
                         }
+                    } else {
+                        Toast.makeText(
+                            context, "Failed to subscribe to topic", Toast.LENGTH_LONG
+                        ).show()
                     }
-            }
+                }
         },
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -193,7 +202,7 @@ private fun NotifAccessScreen(viewModel: NotifMirrorViewModel) {
     Spacer(Modifier.height(8.dp))
     Text(
         text = "This app needs permission to read notifications so it can mirror them " +
-            "to your other phone.\n\nTap the button below to open Settings, " +
+            "to your partner's phone.\n\nTap the button below to open Settings, " +
             "then enable this app.",
         style = MaterialTheme.typography.bodyMedium,
     )
@@ -213,7 +222,6 @@ private fun NotifAccessScreen(viewModel: NotifMirrorViewModel) {
     OutlinedButton(
         onClick = {
             if (viewModel.isNotificationListenerEnabled()) {
-                requestBatteryExemption(context)
                 viewModel.completeSetup()
             } else {
                 Toast.makeText(
@@ -225,7 +233,7 @@ private fun NotifAccessScreen(viewModel: NotifMirrorViewModel) {
         },
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text("I've Enabled It — Continue")
+        Text("I've Enabled It - Continue")
     }
 }
 
@@ -239,7 +247,7 @@ private fun StatusScreen(viewModel: NotifMirrorViewModel, state: MirrorUiState) 
     }
 
     Text(
-        text = "Notification Mirror",
+        text = "Couple Mirror",
         style = MaterialTheme.typography.headlineMedium,
     )
     Spacer(Modifier.height(24.dp))

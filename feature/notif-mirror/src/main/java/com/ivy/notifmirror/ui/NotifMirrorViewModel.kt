@@ -65,16 +65,17 @@ class NotifMirrorViewModel @Inject constructor(
         val topicId = _state.value.topicId.trim()
         if (topicId.isEmpty()) return false
 
-        prefs.topicId = topicId
+        val url = _state.value.cloudFunctionUrl.trim()
+        if (url.isEmpty()) return false
 
-        if (_state.value.mode == MirrorPrefs.MODE_SENDER) {
-            val url = _state.value.cloudFunctionUrl.trim()
-            if (url.isEmpty()) return false
-            prefs.cloudFunctionUrl = url
-            _state.value = _state.value.copy(screen = MirrorScreen.NOTIF_ACCESS)
-        }
+        prefs.topicId = topicId
+        prefs.cloudFunctionUrl = url
 
         return true
+    }
+
+    fun goToNotifAccess() {
+        _state.value = _state.value.copy(screen = MirrorScreen.NOTIF_ACCESS)
     }
 
     fun isNotificationListenerEnabled(): Boolean {
@@ -112,7 +113,7 @@ class NotifMirrorViewModel @Inject constructor(
     fun resetSetup() {
         MirrorForegroundService.stop(appContext)
         val topicId = prefs.topicId
-        if (prefs.mode == MirrorPrefs.MODE_RECEIVER && topicId != null) {
+        if (topicId != null) {
             com.google.firebase.messaging.FirebaseMessaging.getInstance()
                 .unsubscribeFromTopic(topicId)
         }

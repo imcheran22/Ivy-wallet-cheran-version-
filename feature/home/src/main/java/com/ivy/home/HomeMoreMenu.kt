@@ -69,6 +69,7 @@ import com.ivy.navigation.CategoriesScreen
 import com.ivy.navigation.IvyPreview
 import com.ivy.navigation.LoansScreen
 import com.ivy.navigation.NotifMirrorScreen
+import com.ivy.navigation.PartnerTransactionsScreen
 import com.ivy.navigation.PlannedPaymentsScreen
 import com.ivy.navigation.ReportScreen
 import com.ivy.navigation.SearchScreen
@@ -546,13 +547,20 @@ private fun QuickAccess(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top
         ) {
+            MoreMenuButton(
+                icon = R.drawable.home_more_menu_share,
+                label = "Couple Mirror",
+            ) {
+                nav.navigateTo(NotifMirrorScreen)
+            }
+
             Spacer(Modifier.weight(1f))
 
             MoreMenuButton(
-                icon = R.drawable.home_more_menu_share,
-                label = "Notif Mirror",
+                icon = R.drawable.home_more_menu_reports,
+                label = "Partner",
             ) {
-                nav.navigateTo(NotifMirrorScreen)
+                nav.navigateTo(PartnerTransactionsScreen)
             }
 
             Spacer(Modifier.weight(1f))

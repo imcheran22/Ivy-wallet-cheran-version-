@@ -8,6 +8,7 @@ import com.ivy.attributions.AttributionsScreenImpl
 import com.ivy.balance.BalanceScreen
 import com.ivy.battery.ui.BatteryScreenImpl
 import com.ivy.notifmirror.ui.NotifMirrorScreenImpl
+import com.ivy.notifmirror.ui.PartnerTransactionsScreenImpl
 import com.ivy.budgets.BudgetScreen
 import com.ivy.categories.CategoriesScreen
 import com.ivy.contributors.ContributorsScreenImpl
@@ -23,6 +24,7 @@ import com.ivy.navigation.AttributionsScreen
 import com.ivy.navigation.BalanceScreen
 import com.ivy.navigation.BatteryScreen
 import com.ivy.navigation.NotifMirrorScreen
+import com.ivy.navigation.PartnerTransactionsScreen
 import com.ivy.navigation.BudgetScreen
 import com.ivy.navigation.CSVScreen
 import com.ivy.navigation.CategoriesScreen
@@ -88,6 +90,7 @@ fun BoxWithConstraintsScope.IvyNavGraph(screen: Screen?) {
         is CSVScreen -> CSVScreen(screen = screen)
         BatteryScreen -> BatteryScreenImpl()
         NotifMirrorScreen -> NotifMirrorScreenImpl()
+        PartnerTransactionsScreen -> PartnerTransactionsScreenImpl()
         FeaturesScreen -> FeaturesScreenImpl()
         AttributionsScreen -> AttributionsScreenImpl()
         ContributorsScreen -> ContributorsScreenImpl()

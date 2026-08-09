@@ -141,6 +141,8 @@ data object BatteryScreen : Screen
 
 data object NotifMirrorScreen : Screen
 
+data object PartnerTransactionsScreen : Screen
+
 data object FeaturesScreen : Screen
 
 data object AttributionsScreen : Screen

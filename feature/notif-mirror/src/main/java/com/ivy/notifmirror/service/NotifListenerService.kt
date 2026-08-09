@@ -54,8 +54,9 @@ class NotifListenerService : NotificationListenerService() {
             try {
                 val body = json.toString()
                     .toRequestBody("application/json".toMediaType())
+                val url = cloudFunctionUrl.trimEnd('/') + "/mirror"
                 val request = Request.Builder()
-                    .url(cloudFunctionUrl)
+                    .url(url)
                     .post(body)
                     .build()
                 client.newCall(request).execute().use { response ->
