@@ -320,12 +320,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (!BuildConfig.DEBUG) {
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-            )
-        } else if (viewModel.isAppLockEnabled() && !hasFocus) {
+        if (viewModel.isAppLockEnabled() && !hasFocus) {
             window.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
                 WindowManager.LayoutParams.FLAG_SECURE
