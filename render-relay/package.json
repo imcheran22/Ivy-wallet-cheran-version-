@@ -1,0 +1,16 @@
+{
+  "name": "notif-mirror-relay",
+  "version": "1.0.0",
+  "description": "Notification mirror relay server for Ivy Wallet",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "firebase-admin": "^12.2.0"
+  }
+}
