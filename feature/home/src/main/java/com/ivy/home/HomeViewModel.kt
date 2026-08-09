@@ -446,11 +446,10 @@ class HomeViewModel @Inject constructor(
 
     private fun switchTheme() {
         viewModelScope.launch {
-            settingsAct.getSettingsWithNextTheme().run {
-                updateSettingsAct(this)
-                ivyContext.switchTheme(this.theme)
-                currentTheme = this.theme
-            }
+            val newSettings = settingsAct.getSettingsWithNextTheme()
+            ivyContext.switchTheme(newSettings.theme)
+            currentTheme = newSettings.theme
+            updateSettingsAct(newSettings)
         }
     }
 

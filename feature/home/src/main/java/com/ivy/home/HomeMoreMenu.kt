@@ -36,8 +36,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,14 +48,11 @@ import com.ivy.base.legacy.Theme
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.design.utils.thenIf
-import com.ivy.legacy.Constants
 import com.ivy.legacy.ivyWalletCtx
-import com.ivy.legacy.rootScreen
 import com.ivy.legacy.utils.clickableNoIndication
 import com.ivy.legacy.utils.colorLerp
 import com.ivy.legacy.utils.lerp
 import com.ivy.legacy.utils.navigationBarInset
-import com.ivy.legacy.utils.openUrl
 import com.ivy.legacy.utils.rememberInteractionSource
 import com.ivy.legacy.utils.rememberSwipeListenerState
 import com.ivy.legacy.utils.springBounce
@@ -76,7 +71,6 @@ import com.ivy.navigation.SearchScreen
 import com.ivy.navigation.SettingsScreen
 import com.ivy.navigation.navigation
 import com.ivy.ui.R
-import com.ivy.wallet.ui.theme.Blue
 import com.ivy.wallet.ui.theme.Gray
 import com.ivy.wallet.ui.theme.components.BufferBattery
 import com.ivy.wallet.ui.theme.components.CircleButtonFilled
@@ -260,10 +254,6 @@ private fun ColumnScope.Content(
         onBufferClick = onBufferClick
     )
 
-    Spacer(Modifier.height(16.dp))
-
-    OpenSource()
-
     Spacer(Modifier.weight(1f))
 }
 
@@ -301,55 +291,6 @@ private fun SearchButton(
         )
 
         Spacer(Modifier.width(16.dp))
-    }
-}
-
-@Composable
-private fun ColumnScope.OpenSource() {
-    val uriHandler = LocalUriHandler.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clip(UI.shapes.r4)
-            .background(UI.colors.pure)
-            .clickable {
-                openUrl(
-                    uriHandler = uriHandler,
-                    url = Constants.URL_IVY_WALLET_REPO
-                )
-            }
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Spacer(Modifier.width(16.dp))
-
-        IvyIcon(
-            icon = R.drawable.github_logo
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 24.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.ivy_wallet_open_source),
-                style = UI.typo.b2.style(
-                    fontWeight = FontWeight.ExtraBold
-                )
-            )
-
-            Spacer(Modifier.height(4.dp))
-
-            Text(
-                text = Constants.URL_IVY_WALLET_REPO,
-                style = UI.typo.c.style(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Blue
-                )
-            )
-        }
     }
 }
 
@@ -494,24 +435,6 @@ private fun QuickAccess(
         ) {
             Spacer(Modifier.weight(1f))
 
-            val context = LocalContext.current
-//        MoreMenuButton(
-//            icon = R.drawable.home_more_menu_reports,
-//            label = "Charts"
-//        ) {
-//            ivyContext.navigateTo(Screen.Charts)
-//        }
-
-            val rootScreen = rootScreen()
-            MoreMenuButton(
-                icon = R.drawable.home_more_menu_share,
-                label = stringResource(R.string.share_ivy)
-            ) {
-                rootScreen.shareIvyWallet()
-            }
-
-            Spacer(Modifier.weight(1f))
-
             MoreMenuButton(
                 icon = R.drawable.home_more_menu_reports,
                 label = stringResource(R.string.reports),
@@ -547,6 +470,8 @@ private fun QuickAccess(
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top
         ) {
+            Spacer(Modifier.weight(1f))
+
             MoreMenuButton(
                 icon = R.drawable.home_more_menu_share,
                 label = "Couple Mirror",
