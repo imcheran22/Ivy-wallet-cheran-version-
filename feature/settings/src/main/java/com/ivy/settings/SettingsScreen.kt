@@ -62,6 +62,8 @@ import com.ivy.navigation.FeaturesScreen
 import com.ivy.navigation.ImportScreen
 import com.ivy.navigation.Navigation
 import com.ivy.navigation.ReleasesScreen
+import com.ivy.navigation.SmsDiagnosticScreen
+import com.ivy.navigation.SmsInboxScreen
 import com.ivy.navigation.navigation
 import com.ivy.navigation.screenScopedViewModel
 import com.ivy.ui.R
@@ -441,6 +443,26 @@ private fun BoxWithConstraintsScope.UI(
             SmsAutoImportSwitch(
                 enabled = smsAutoImportEnabled,
                 onSetEnabled = onSetSmsAutoImportEnabled
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_category_m,
+                text = "Sort inbox",
+                description = "Tell the auto-imported transactions what they were for. " +
+                    "Name a payee once and every future payment to it sorts itself.",
+                onClick = { nav.navigateTo(SmsInboxScreen) }
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_document_m,
+                text = "SMS dry run",
+                description = "See which senders text you about money and exactly what the " +
+                    "parser would extract - before anything is written.",
+                onClick = { nav.navigateTo(SmsDiagnosticScreen) }
             )
 
             Spacer(Modifier.height(12.dp))
@@ -920,8 +942,9 @@ private fun SmsAutoImportSwitch(
             }
         },
         text = "Auto-import transactions from SMS",
-        description = "Best-effort: parses incoming bank SMS for amount/account and " +
-            "creates a transaction. Category is guessed when possible, otherwise left empty.",
+        description = "Best-effort: reads incoming bank SMS for amount, account and payee, " +
+            "then files it. Anything it can't categorise waits in Sort inbox. Cash and " +
+            "banks that don't text you are missed.",
         icon = R.drawable.ic_notification_m
     )
 }

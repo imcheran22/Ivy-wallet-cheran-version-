@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Reading the SMS inbox is what makes the dry-run diagnostic possible: it shows exactly
+      what the parser would extract from messages already on the device, before anything is
+      written to the wallet. Requested at runtime and only used when the user opts in.
+    -->
+    <uses-permission android:name="android.permission.READ_SMS" />
+
+</manifest>

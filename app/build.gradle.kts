@@ -181,6 +181,7 @@ dependencies {
     implementation(projects.feature.reports)
     implementation(projects.feature.search)
     implementation(projects.feature.settings)
+    implementation(projects.feature.smsInbox)
     implementation(projects.feature.transactions)
     implementation(projects.feature.poll.impl)
     implementation(projects.shared.base)
