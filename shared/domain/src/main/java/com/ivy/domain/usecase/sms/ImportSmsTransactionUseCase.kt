@@ -30,14 +30,18 @@ import javax.inject.Inject
  * primary/first account) so the transaction still gets created - per product intent, a
  * transaction landing on the "wrong" account is better than the pull silently doing nothing.
  *
- * Category matching happens in two steps, memory before rules:
- * 1. If the user has already sorted this payee once, reuse that category. Naming the chai shop
- *    downstairs today categorises every future payment to it.
- * 2. Otherwise fall back to [SmsCategoryGuesser], which returns a guess *and* the reason for
- *    it, so the sorting queue can show its working.
+ * Only one thing files a transaction automatically: an answer the user has already given. If
+ * they have sorted this payee before, reuse that category - naming the chai shop downstairs
+ * today categorises every future payment to it.
  *
- * If neither produces a category that actually exists, the transaction is saved uncategorized
- * and shows up in the sorting queue. Uncategorized is a visible state, not a hidden one.
+ * A [SmsCategoryGuesser] guess deliberately does *not* file anything. It travels back in
+ * [Result.Imported.guess] and is pre-selected in the sorting queue instead, next to the reason
+ * it was made, so the user can overrule it. A guess that files itself is a guess nobody ever
+ * audits, which is worse than no guess at all - and the "paid to a person, typical fare" rule
+ * in particular is wrong often enough that it has to be seen.
+ *
+ * So anything the user hasn't answered for lands in the queue uncategorized. Uncategorized is
+ * a visible state here, not a hidden one.
  */
 class ImportSmsTransactionUseCase @Inject constructor(
     private val accountRepository: AccountRepository,
@@ -85,7 +89,6 @@ class ImportSmsTransactionUseCase @Inject constructor(
         val categories = categoryRepository.findAll()
         val guess = SmsCategoryGuesser.guess(parsed)
         val categoryId = rememberedCategory(parsed.payee, categories)
-            ?: guess?.let { categories.findByName(it.categoryName)?.id }
 
         val metadata = TransactionMetadata(
             recurringRuleId = null,
@@ -160,9 +163,6 @@ class ImportSmsTransactionUseCase @Inject constructor(
         )
         return window.any { SmsTransactionMarker.dedupeKeyOf(it.description?.value) == dedupeKey }
     }
-
-    private fun List<Category>.findByName(name: String): Category? =
-        firstOrNull { it.name.value.equals(name, ignoreCase = true) }
 
     companion object {
         private val DEDUPE_LOOKBACK: Duration = Duration.ofDays(3)
