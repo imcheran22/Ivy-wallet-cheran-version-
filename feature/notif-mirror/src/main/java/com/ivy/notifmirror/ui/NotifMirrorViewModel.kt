@@ -20,6 +20,8 @@ data class MirrorUiState(
     val cloudFunctionUrl: String = "",
     val lastSyncTime: Long = 0L,
     val serviceActive: Boolean = false,
+    val deviceLabel: String = "",
+    val notifAccessGranted: Boolean = false,
 )
 
 enum class MirrorScreen {
@@ -39,6 +41,7 @@ class NotifMirrorViewModel @Inject constructor(
     val state: StateFlow<MirrorUiState> = _state.asStateFlow()
 
     init {
+        _state.value = _state.value.copy(deviceLabel = prefs.deviceLabel)
         if (prefs.setupComplete) {
             refreshStatus()
             _state.value = _state.value.copy(screen = MirrorScreen.STATUS)
@@ -61,6 +64,10 @@ class NotifMirrorViewModel @Inject constructor(
         _state.value = _state.value.copy(cloudFunctionUrl = url)
     }
 
+    fun updateDeviceLabel(label: String) {
+        _state.value = _state.value.copy(deviceLabel = label)
+    }
+
     fun confirmTopicSetup(): Boolean {
         val topicId = _state.value.topicId.trim()
         if (topicId.isEmpty()) return false
@@ -70,6 +77,7 @@ class NotifMirrorViewModel @Inject constructor(
 
         prefs.topicId = topicId
         prefs.cloudFunctionUrl = url
+        _state.value.deviceLabel.trim().takeIf { it.isNotEmpty() }?.let { prefs.deviceLabel = it }
 
         return true
     }
@@ -102,6 +110,8 @@ class NotifMirrorViewModel @Inject constructor(
             mode = prefs.mode,
             topicId = prefs.topicId ?: "",
             lastSyncTime = prefs.lastSyncTime,
+            deviceLabel = prefs.deviceLabel,
+            notifAccessGranted = isNotificationListenerEnabled(),
             serviceActive = if (prefs.mode == MirrorPrefs.MODE_SENDER) {
                 isNotificationListenerEnabled()
             } else {
@@ -118,6 +128,6 @@ class NotifMirrorViewModel @Inject constructor(
                 .unsubscribeFromTopic(topicId)
         }
         prefs.clear()
-        _state.value = MirrorUiState()
+        _state.value = MirrorUiState(deviceLabel = prefs.deviceLabel)
     }
 }

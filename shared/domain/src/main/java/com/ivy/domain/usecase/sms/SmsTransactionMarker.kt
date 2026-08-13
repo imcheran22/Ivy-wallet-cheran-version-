@@ -37,4 +37,27 @@ object SmsTransactionMarker {
 
     fun paidToPerson(description: String?): Boolean =
         description?.let { markerRegex.find(it)?.groupValues?.get(2) } == PERSON_FLAG
+
+    /**
+     * What a human should see instead of the stored description.
+     *
+     * The dedupe key has to live somewhere, and the description is the only field on a
+     * transaction that can hold it without a schema change - but it is machine text and it has
+     * no business being on screen. Every surface that renders a description runs it through
+     * here first, so `[sms:ref-112612388233]` never reaches a card again.
+     *
+     * "Auto-imported from SMS" is also longer than the line it sits on deserves; the shorter
+     * label says the same thing.
+     */
+    fun displayText(description: String?): String? {
+        val withoutMarker = markerRegex.replace(description ?: return null, "").trim()
+        return if (withoutMarker.startsWith(PREFIX)) {
+            val rest = withoutMarker.removePrefix(PREFIX).trim().trimStart('·', ' ')
+            if (rest.isBlank()) SHORT_LABEL else "$SHORT_LABEL · $rest"
+        } else {
+            withoutMarker.ifBlank { null }
+        }
+    }
+
+    private const val SHORT_LABEL = "From SMS"
 }

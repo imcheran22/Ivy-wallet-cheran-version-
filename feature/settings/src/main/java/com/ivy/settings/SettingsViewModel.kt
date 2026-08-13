@@ -30,6 +30,9 @@ import com.ivy.domain.RootScreen
 import com.ivy.domain.sync.CloudSyncTrigger
 import com.ivy.domain.usecase.csv.ExportCsvUseCase
 import com.ivy.domain.usecase.exchange.SyncExchangeRatesUseCase
+import com.ivy.domain.usecase.sms.DeviceSmsReader
+import com.ivy.domain.usecase.sms.SmsCaptureLog
+import com.ivy.domain.usecase.sms.SmsCatchUpUseCase
 import com.ivy.frp.monad.Res
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.LogoutLogic
@@ -70,6 +73,9 @@ class SettingsViewModel @Inject constructor(
     private val cloudSyncSettings: CloudSyncSettings,
     private val cloudSyncRepository: CloudSyncRepository,
     private val cloudSyncTrigger: CloudSyncTrigger,
+    private val smsCaptureLog: SmsCaptureLog,
+    private val smsCatchUpUseCase: SmsCatchUpUseCase,
+    private val deviceSmsReader: DeviceSmsReader,
     @ApplicationContext private val context: Context
 ) : ComposeViewModel<SettingsState, SettingsEvent>() {
 
@@ -90,6 +96,7 @@ class SettingsViewModel @Inject constructor(
     private val cloudSyncInProgress = mutableStateOf(false)
     private val cloudSyncLastSyncedEpochMs = mutableLongStateOf(0L)
     private val cloudSyncError = mutableStateOf<String?>(null)
+    private val smsCapture = mutableStateOf(SmsCaptureSummary())
 
     @Composable
     override fun uiState(): SettingsState {
@@ -116,6 +123,7 @@ class SettingsViewModel @Inject constructor(
             cloudSyncInProgress = cloudSyncInProgress.value,
             cloudSyncLastSyncedEpochMs = cloudSyncLastSyncedEpochMs.longValue.takeIf { it > 0 },
             cloudSyncError = cloudSyncError.value,
+            smsCapture = smsCapture.value,
         )
     }
 
@@ -135,6 +143,31 @@ class SettingsViewModel @Inject constructor(
 
     private suspend fun initializeSmsAutoImport() {
         smsAutoImportEnabled.value = dataStore.data.first()[DatastoreKeys.SMS_AUTO_IMPORT_ENABLED] ?: false
+        refreshSmsCaptureSummary()
+    }
+
+    private suspend fun refreshSmsCaptureSummary(sweeping: Boolean = false) {
+        val log = smsCaptureLog.read()
+        smsCapture.value = SmsCaptureSummary(
+            enabled = smsAutoImportEnabled.value,
+            permissionGranted = deviceSmsReader.hasPermission(),
+            capturedTotal = log.capturedTotal,
+            lastCaptureAtEpochMs = log.lastCaptureAt?.toEpochMilli(),
+            lastSweepAtEpochMs = log.lastSweepAt?.toEpochMilli(),
+            lastSweepSummary = log.lastSweepSummary,
+            sweeping = sweeping,
+        )
+    }
+
+    private fun catchUpOnSms() {
+        viewModelScope.launch {
+            refreshSmsCaptureSummary(sweeping = true)
+            val outcome = smsCatchUpUseCase.sweep(force = true)
+            refreshSmsCaptureSummary()
+            outcome.blockedReason?.let { reason ->
+                smsCapture.value = smsCapture.value.copy(lastSweepSummary = reason)
+            }
+        }
     }
 
     private suspend fun initializeCloudSync() {
@@ -276,6 +309,7 @@ class SettingsViewModel @Inject constructor(
             SettingsEvent.SwitchLanguage -> switchLanguage()
 
             is SettingsEvent.SetSmsAutoImportEnabled -> setSmsAutoImportEnabled(event.enabled)
+            SettingsEvent.CatchUpOnSms -> catchUpOnSms()
             is SettingsEvent.SetCloudSyncEnabled -> setCloudSyncEnabled(event.enabled)
             is SettingsEvent.SetCloudSyncCredentials -> setCloudSyncCredentials(
                 event.url,

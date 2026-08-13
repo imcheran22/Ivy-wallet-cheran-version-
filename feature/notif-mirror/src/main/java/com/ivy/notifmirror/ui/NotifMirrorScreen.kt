@@ -1,6 +1,7 @@
 package com.ivy.notifmirror.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -12,6 +13,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,252 +21,312 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.ivy.navigation.screenScopedViewModel
 import com.google.firebase.messaging.FirebaseMessaging
+import com.ivy.navigation.navigation
+import com.ivy.navigation.screenScopedViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
+/**
+ * Every screen in this file paints its own background.
+ *
+ * `IvyUI` only wraps legacy screens in a `Surface`, so a modern screen that draws straight
+ * onto the window inherits no background colour at all - which is how this screen ended up
+ * rendering near-black text on a near-black window. A `Scaffold` with an explicit
+ * `containerColor` is the fix, and it has to stay on each entry point.
+ */
 @Composable
 fun NotifMirrorScreenImpl(
     viewModel: NotifMirrorViewModel = screenScopedViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+    MirrorScaffold(
+        title = when (state.screen) {
+            MirrorScreen.MODE_SELECTION -> "Couple Mirror"
+            MirrorScreen.TOPIC_SETUP -> "Pair the phones"
+            MirrorScreen.NOTIF_ACCESS -> "Notification access"
+            MirrorScreen.STATUS -> "Couple Mirror"
+        },
     ) {
         when (state.screen) {
-            MirrorScreen.MODE_SELECTION -> ModeSelectionScreen(viewModel)
-            MirrorScreen.TOPIC_SETUP -> TopicSetupScreen(viewModel, state)
-            MirrorScreen.NOTIF_ACCESS -> NotifAccessScreen(viewModel)
-            MirrorScreen.STATUS -> StatusScreen(viewModel, state)
+            MirrorScreen.MODE_SELECTION -> ModeSelectionStep(viewModel)
+            MirrorScreen.TOPIC_SETUP -> TopicSetupStep(viewModel, state)
+            MirrorScreen.NOTIF_ACCESS -> NotifAccessStep(viewModel)
+            MirrorScreen.STATUS -> StatusStep(viewModel, state)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun MirrorScaffold(
+    title: String,
+    actions: @Composable () -> Unit = {},
+    content: @Composable () -> Unit,
+) {
+    val nav = navigation()
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+        topBar = {
+            TopAppBar(
+                title = { Text(text = title, fontWeight = FontWeight.SemiBold) },
+                navigationIcon = {
+                    IconButton(onClick = { nav.back() }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = { actions() },
+            )
+        },
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+        ) {
+            content()
+            Spacer(Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
-private fun ModeSelectionScreen(viewModel: NotifMirrorViewModel) {
+private fun ModeSelectionStep(viewModel: NotifMirrorViewModel) {
     Text(
-        text = "Couple Mirror",
-        style = MaterialTheme.typography.headlineMedium,
-    )
-    Spacer(Modifier.height(8.dp))
-    Text(
-        text = "Sync notifications and money transactions between two phones.",
+        text = "Mirror one phone's notifications onto the other, and keep both wallets in " +
+            "step. Pick what this phone does.",
         style = MaterialTheme.typography.bodyLarge,
-    )
-    Spacer(Modifier.height(8.dp))
-    Text(
-        text = "Choose how this phone will be used:",
-        style = MaterialTheme.typography.bodyMedium,
-    )
-    Spacer(Modifier.height(32.dp))
-
-    androidx.compose.material3.Button(
-        onClick = { viewModel.selectMode("sender") },
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Text("Sender (Secondary Phone)")
-    }
-    Spacer(Modifier.height(4.dp))
-    Text(
-        text = "Captures notifications and sends them to your primary phone. " +
-            "Transactions sync both ways.",
-        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 
     Spacer(Modifier.height(24.dp))
 
-    androidx.compose.material3.Button(
+    RoleCard(
+        title = "This phone sends",
+        body = "Its notifications are forwarded to the other phone. Needs notification " +
+            "access. Choose this on the phone you check less often.",
+        buttonText = "Set up as sender",
+        onClick = { viewModel.selectMode("sender") },
+    )
+
+    Spacer(Modifier.height(16.dp))
+
+    RoleCard(
+        title = "This phone receives",
+        body = "Shows the other phone's notifications here, labelled with where they came " +
+            "from. Choose this on the phone you actually carry.",
+        buttonText = "Set up as receiver",
         onClick = { viewModel.selectMode("receiver") },
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Text("Receiver (Primary Phone)")
-    }
-    Spacer(Modifier.height(4.dp))
+    )
+
+    Spacer(Modifier.height(20.dp))
+
     Text(
-        text = "Receives notifications from your secondary phone. " +
-            "Transactions sync both ways.",
+        text = "Transactions sync both ways regardless of which role you pick.",
         style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
 @Composable
-private fun TopicSetupScreen(viewModel: NotifMirrorViewModel, state: MirrorUiState) {
+private fun RoleCard(
+    title: String,
+    body: String,
+    buttonText: String,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(6.dp))
+            Text(text = body, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(buttonText) }
+        }
+    }
+}
+
+@Composable
+private fun TopicSetupStep(viewModel: NotifMirrorViewModel, state: MirrorUiState) {
     val context = LocalContext.current
     val isSender = state.mode == "sender"
 
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* granted or not, continue setup */ }
+    ) { /* setup continues either way; the status screen re-asks if it was refused */ }
 
-    fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
-
-    Text(
-        text = "Topic Setup",
-        style = MaterialTheme.typography.headlineMedium,
-    )
-    Spacer(Modifier.height(8.dp))
     Text(
         text = if (isSender) {
-            "Generate a new Topic ID, then enter the same ID on your Receiver phone."
+            "Generate a pairing code here, then type the same code on the other phone."
         } else {
-            "Enter the Topic ID from your Sender phone."
+            "Type the pairing code shown on the sender phone."
         },
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Spacer(Modifier.height(24.dp))
 
-    if (isSender) {
-        TextButton(
-            onClick = {
-                val id = "couple_mirror_" + UUID.randomUUID().toString().take(8)
-                viewModel.updateTopicId(id)
-            },
-        ) {
-            Text("Generate Topic ID")
-        }
-        Spacer(Modifier.height(8.dp))
-    }
+    Spacer(Modifier.height(20.dp))
 
     OutlinedTextField(
-        value = state.topicId,
-        onValueChange = { viewModel.updateTopicId(it) },
-        label = { Text("Topic ID") },
+        value = state.deviceLabel,
+        onValueChange = viewModel::updateDeviceLabel,
+        label = { Text("Name this phone") },
+        supportingText = {
+            Text("Shown on every notification this phone forwards, so the other phone knows who it was.")
+        },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
     )
 
     Spacer(Modifier.height(16.dp))
-    Text(
-        text = "Enter your Relay Server URL (e.g. https://your-app.onrender.com):",
-        style = MaterialTheme.typography.bodySmall,
+
+    OutlinedTextField(
+        value = state.topicId,
+        onValueChange = viewModel::updateTopicId,
+        label = { Text("Pairing code") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
     )
-    Spacer(Modifier.height(8.dp))
+
+    if (isSender) {
+        Spacer(Modifier.height(8.dp))
+        TextButton(
+            onClick = { viewModel.updateTopicId("couple_mirror_" + UUID.randomUUID().toString().take(8)) },
+        ) {
+            Text("Generate a code")
+        }
+    }
+
+    Spacer(Modifier.height(16.dp))
+
     OutlinedTextField(
         value = state.cloudFunctionUrl,
-        onValueChange = { viewModel.updateCloudFunctionUrl(it) },
-        label = { Text("Relay Server URL") },
+        onValueChange = viewModel::updateCloudFunctionUrl,
+        label = { Text("Relay server URL") },
+        placeholder = { Text("https://your-app.onrender.com") },
+        supportingText = { Text("Both phones must point at the same relay.") },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
     )
 
     Spacer(Modifier.height(24.dp))
 
-    androidx.compose.material3.Button(
+    Button(
         onClick = {
-            val ok = viewModel.confirmTopicSetup()
-            if (!ok) {
-                Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+            if (!viewModel.confirmTopicSetup()) {
+                Toast.makeText(context, "Fill in the code and the relay URL", Toast.LENGTH_SHORT).show()
                 return@Button
             }
 
-            val topicId = state.topicId.trim()
-            FirebaseMessaging.getInstance().subscribeToTopic(topicId)
+            FirebaseMessaging.getInstance().subscribeToTopic(state.topicId.trim())
                 .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        requestNotificationPermissionIfNeeded()
-                        if (isSender) {
-                            requestBatteryExemption(context)
-                            viewModel.goToNotifAccess()
-                        } else {
-                            requestBatteryExemption(context)
-                            viewModel.completeSetup()
-                        }
-                    } else {
-                        Toast.makeText(
-                            context, "Failed to subscribe to topic", Toast.LENGTH_LONG
-                        ).show()
+                    if (!task.isSuccessful) {
+                        Toast.makeText(context, "Could not reach the relay", Toast.LENGTH_LONG).show()
+                        return@addOnCompleteListener
                     }
+                    requestNotificationPermissionIfNeeded(context) {
+                        notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    requestBatteryExemption(context)
+                    if (isSender) viewModel.goToNotifAccess() else viewModel.completeSetup()
                 }
         },
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text("Next")
+        Text("Continue")
     }
 }
 
 @Composable
-private fun NotifAccessScreen(viewModel: NotifMirrorViewModel) {
+private fun NotifAccessStep(viewModel: NotifMirrorViewModel) {
     val context = LocalContext.current
 
     Text(
-        text = "Notification Access",
-        style = MaterialTheme.typography.headlineMedium,
+        text = "This phone needs permission to read its own notifications before it can " +
+            "forward them.",
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    Spacer(Modifier.height(8.dp))
+
+    Spacer(Modifier.height(12.dp))
+
     Text(
-        text = "This app needs permission to read notifications so it can mirror them " +
-            "to your partner's phone.\n\nTap the button below to open Settings, " +
-            "then enable this app.",
+        text = "Open the settings below, find this app in the list, and switch it on. " +
+            "Android does not let an app grant this to itself.",
         style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+
     Spacer(Modifier.height(24.dp))
 
-    androidx.compose.material3.Button(
-        onClick = {
-            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-        },
+    Button(
+        onClick = { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text("Open Notification Access Settings")
+        Text("Open notification access settings")
     }
 
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(12.dp))
 
     OutlinedButton(
         onClick = {
             if (viewModel.isNotificationListenerEnabled()) {
                 viewModel.completeSetup()
             } else {
-                Toast.makeText(
-                    context,
-                    "Please enable Notification Access first",
-                    Toast.LENGTH_LONG,
-                ).show()
+                Toast.makeText(context, "Not switched on yet", Toast.LENGTH_LONG).show()
             }
         },
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text("I've Enabled It - Continue")
+        Text("I've switched it on")
     }
 }
 
 @Composable
-private fun StatusScreen(viewModel: NotifMirrorViewModel, state: MirrorUiState) {
+private fun StatusStep(viewModel: NotifMirrorViewModel, state: MirrorUiState) {
     val context = LocalContext.current
+    val isSender = state.mode == "sender"
     val hasNotifPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         ContextCompat.checkSelfPermission(
-            context, Manifest.permission.POST_NOTIFICATIONS
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
     } else {
         true
@@ -274,87 +336,69 @@ private fun StatusScreen(viewModel: NotifMirrorViewModel, state: MirrorUiState) 
         ActivityResultContracts.RequestPermission()
     ) { viewModel.refreshStatus() }
 
-    val lastSyncText = if (state.lastSyncTime > 0) {
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            .format(Date(state.lastSyncTime))
-    } else {
-        "Never"
-    }
-
-    Text(
-        text = "Couple Mirror",
-        style = MaterialTheme.typography.headlineMedium,
-    )
-    Spacer(Modifier.height(24.dp))
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
-                text = "Service: ${if (state.serviceActive) "Active" else "Inactive"}",
-                style = MaterialTheme.typography.titleMedium,
+                text = if (state.serviceActive) "Running" else "Not running",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
                 color = if (state.serviceActive) {
-                    Color(0xFF2E7D32)
+                    MaterialTheme.colorScheme.secondary
                 } else {
-                    Color(0xFFC62828)
+                    MaterialTheme.colorScheme.error
                 },
             )
-            Text(
-                text = "Mode: ${state.mode?.replaceFirstChar { it.uppercase() } ?: "Not set"}",
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = "Topic: ${state.topicId.ifEmpty { "Not set" }}",
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = "Last sync: $lastSyncText",
-                style = MaterialTheme.typography.bodyLarge,
-            )
+            Spacer(Modifier.height(10.dp))
+            StatusRow("This phone", state.deviceLabel)
+            StatusRow("Role", if (isSender) "Sending notifications" else "Receiving notifications")
+            StatusRow("Pairing code", state.topicId.ifEmpty { "Not set" })
+            StatusRow("Last sync", formatLastSync(state.lastSyncTime))
         }
+    }
+
+    if (isSender && !state.notifAccessGranted) {
+        Spacer(Modifier.height(16.dp))
+        WarningCard(
+            title = "Notification access is off",
+            body = "Nothing can be forwarded until this is switched on in Android settings.",
+            actionText = "Open settings",
+            onAction = {
+                context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            },
+        )
     }
 
     if (!hasNotifPermission) {
         Spacer(Modifier.height(16.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFFFF3E0),
-            ),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Notification permission not granted",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color(0xFFE65100),
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Mirrored notifications won't appear without this permission.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF333333),
-                )
-                Spacer(Modifier.height(8.dp))
-                androidx.compose.material3.Button(
-                    onClick = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            notifPermissionLauncher.launch(
-                                Manifest.permission.POST_NOTIFICATIONS
-                            )
-                        }
-                    },
-                ) {
-                    Text("Grant Permission")
+        WarningCard(
+            title = "This app cannot post notifications",
+            body = "Mirrored alerts will arrive but stay invisible until you allow them.",
+            actionText = "Allow notifications",
+            onAction = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
-            }
-        }
+            },
+        )
+    }
+
+    if (state.lastSyncTime == 0L) {
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "Nothing has come through yet. Both phones need the same pairing code and " +
+                "the same relay URL - and the sender needs notification access.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 
     Spacer(Modifier.height(24.dp))
@@ -363,26 +407,82 @@ private fun StatusScreen(viewModel: NotifMirrorViewModel, state: MirrorUiState) 
         onClick = { viewModel.refreshStatus() },
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text("Refresh Status")
+        Text("Refresh")
     }
 
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(8.dp))
 
-    TextButton(
-        onClick = { viewModel.resetSetup() },
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Text("Reset Setup")
+    TextButton(onClick = { viewModel.resetSetup() }, modifier = Modifier.fillMaxWidth()) {
+        Text("Unpair this phone", color = MaterialTheme.colorScheme.error)
     }
 }
 
-private fun requestBatteryExemption(context: android.content.Context) {
+@Composable
+private fun StatusRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+@Composable
+private fun WarningCard(
+    title: String,
+    body: String,
+    actionText: String,
+    onAction: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text(text = body, style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(12.dp))
+            Button(onClick = onAction) { Text(actionText) }
+        }
+    }
+}
+
+private fun formatLastSync(epochMs: Long): String = if (epochMs > 0) {
+    SimpleDateFormat("d MMM, h:mm a", Locale.getDefault()).format(Date(epochMs))
+} else {
+    "Never"
+}
+
+private inline fun requestNotificationPermissionIfNeeded(context: Context, launch: () -> Unit) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+    val granted = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS
+    ) == PackageManager.PERMISSION_GRANTED
+    if (!granted) launch()
+}
+
+private fun requestBatteryExemption(context: Context) {
     val pm = context.getSystemService(PowerManager::class.java)
-    if (!pm.isIgnoringBatteryOptimizations(context.packageName)) {
-        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+    if (pm.isIgnoringBatteryOptimizations(context.packageName)) return
+    context.startActivity(
+        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
             data = Uri.parse("package:${context.packageName}")
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(intent)
-    }
+    )
 }

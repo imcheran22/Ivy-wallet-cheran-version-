@@ -28,6 +28,7 @@ import com.ivy.base.legacy.Theme
 import com.ivy.base.legacy.Transaction
 import com.ivy.base.legacy.TransactionHistoryItem
 import com.ivy.base.legacy.stringRes
+import com.ivy.base.model.TransactionType
 import com.ivy.design.api.LocalTimeConverter
 import com.ivy.design.api.LocalTimeFormatter
 import com.ivy.design.api.LocalTimeProvider
@@ -340,6 +341,16 @@ fun HomeLazyColumn(
         state = listState
     ) {
         item {
+            // Counted from the same history the list below renders, so the caption on the
+            // card and the rows underneath it can never disagree.
+            val periodTransactions = history.filterIsInstance<Transaction>()
+            val incomeTransactions = periodTransactions.filter {
+                it.type == TransactionType.INCOME
+            }
+            val expenseTransactions = periodTransactions.filter {
+                it.type == TransactionType.EXPENSE
+            }
+
             CashFlowInfo(
                 currency = baseData.baseCurrency,
                 balance = balance.toDouble(),
@@ -348,6 +359,11 @@ fun HomeLazyColumn(
 
                 monthlyIncome = stats.income.toDouble(),
                 monthlyExpenses = stats.expense.toDouble(),
+
+                incomeCount = incomeTransactions.size,
+                expenseCount = expenseTransactions.size,
+                unsortedIncomeCount = incomeTransactions.count { it.categoryId == null },
+                unsortedExpenseCount = expenseTransactions.count { it.categoryId == null },
 
                 onOpenMoreMenu = onOpenMoreMenu,
                 onBalanceClick = onBalanceClick,

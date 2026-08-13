@@ -1,4 +1,4 @@
-package com.ivy.smsinbox.data
+package com.ivy.domain.usecase.sms
 
 import android.Manifest
 import android.content.Context

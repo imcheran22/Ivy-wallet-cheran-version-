@@ -163,6 +163,28 @@ class BankSmsParserTest {
     }
 
     @Test
+    fun `strips the acquirer reference welded onto a QR merchant name`() {
+        val parsed = BankSmsParser.parse(
+            "Dear UPI user A/C X1234 debited by 11.0 on date 12Aug25 trf to " +
+                "BHARATPE9O7A7B2M0F2X04941 Refno 112612388233. -SBI"
+        )
+
+        parsed.shouldNotBeNullAnd { payee shouldBe "BHARATPE" }
+    }
+
+    @Test
+    fun `keeps merchant names that are not reference mashes intact`() {
+        BankSmsParser.parse(
+            "Rs.1250.00 spent on HDFC Bank Card x1234 at AMAZON SELLER SERVICES on 05-08-25"
+        ).shouldNotBeNullAnd { payee shouldBe "AMAZON SELLER SERVICES" }
+
+        BankSmsParser.parse(
+            "Dear UPI user A/C X1234 debited by 40.0 on date 05Aug25 trf to K MANIKANTA " +
+                "Refno 141159140296. -SBI"
+        ).shouldNotBeNullAnd { payee shouldBe "K MANIKANTA" }
+    }
+
+    @Test
     fun `recognises money-shaped messages more widely than it can parse them`() {
         BankSmsParser.looksLikeMoneyAlert("Rs 500 debited").shouldBeTrue()
         BankSmsParser.looksLikeMoneyAlert("Your parcel is out for delivery").shouldBeFalse()

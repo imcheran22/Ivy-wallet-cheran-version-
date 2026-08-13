@@ -9,12 +9,11 @@ import com.ivy.base.legacy.Theme
 import com.ivy.base.legacy.stringRes
 import com.ivy.base.model.TransactionType
 import com.ivy.data.db.dao.read.SettingsDao
-import com.ivy.data.repository.LegalRepository
+import com.ivy.domain.usecase.sms.SmsCatchUpUseCase
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.utils.ioThread
 import com.ivy.legacy.utils.readOnly
-import com.ivy.navigation.DisclaimerScreen
 import com.ivy.navigation.EditTransactionScreen
 import com.ivy.navigation.MainScreen
 import com.ivy.navigation.Navigation
@@ -42,7 +41,7 @@ class RootViewModel @Inject constructor(
     private val sharedPrefs: SharedPrefs,
     private val transactionReminderLogic: TransactionReminderLogic,
     private val migrationsManager: MigrationsManager,
-    private val legalRepo: LegalRepository,
+    private val smsCatchUpUseCase: SmsCatchUpUseCase,
 ) : ViewModel() {
 
     companion object {
@@ -84,9 +83,6 @@ class RootViewModel @Inject constructor(
                 } else {
                     nav.navigateTo(OnboardingScreen)
                 }
-                if (!legalRepo.isDisclaimerAccepted()) {
-                    nav.navigateTo(DisclaimerScreen)
-                }
             }
 
             TestIdlingResource.decrement()
@@ -94,6 +90,15 @@ class RootViewModel @Inject constructor(
 
         viewModelScope.launch {
             migrationsManager.executeMigrations()
+        }
+
+        viewModelScope.launch {
+            // The SMS broadcast receiver is the fast path, not the guarantee - several OEM
+            // builds stop delivering it without telling the app. Sweeping the inbox on every
+            // open is what makes capture eventually correct; the importer dedupes, so a sweep
+            // over already-captured messages costs nothing but a read.
+            runCatching { smsCatchUpUseCase.sweep() }
+                .onFailure { Timber.w(it, "SMS catch-up sweep failed") }
         }
     }
 

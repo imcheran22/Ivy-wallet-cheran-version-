@@ -45,8 +45,16 @@ class NotifListenerService : NotificationListenerService() {
             put("topic", topicId)
             put("source_app", appLabel)
             put("source_package", sbn.packageName)
+            put("device_label", prefs.deviceLabel)
             put("title", extras.getCharSequence("android.title")?.toString() ?: "")
             put("text", extras.getCharSequence("android.text")?.toString() ?: "")
+            // Longer bodies live in BIG_TEXT; the short "android.text" is often an ellipsised
+            // preview, which is exactly the detail worth having when reading someone else's
+            // alert with no way to expand it.
+            put(
+                "big_text",
+                extras.getCharSequence("android.bigText")?.toString() ?: "",
+            )
             put("timestamp", sbn.postTime.toString())
         }
 

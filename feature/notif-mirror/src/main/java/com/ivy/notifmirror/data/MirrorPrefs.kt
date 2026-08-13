@@ -28,6 +28,18 @@ class MirrorPrefs(context: Context) {
         get() = prefs.getBoolean(KEY_SETUP_COMPLETE, false)
         set(value) = prefs.edit().putBoolean(KEY_SETUP_COMPLETE, value).apply()
 
+    /**
+     * What this phone calls itself when it forwards a notification.
+     *
+     * Without it a mirrored alert is indistinguishable from one this phone raised itself -
+     * same icon, same shade, no hint that it happened somewhere else. The label is the whole
+     * point of mirroring: knowing *whose* phone the thing happened on.
+     */
+    var deviceLabel: String
+        get() = prefs.getString(KEY_DEVICE_LABEL, null)?.takeIf { it.isNotBlank() }
+            ?: android.os.Build.MODEL
+        set(value) = prefs.edit().putString(KEY_DEVICE_LABEL, value).apply()
+
     fun clear() {
         prefs.edit().clear().apply()
     }
@@ -39,6 +51,7 @@ class MirrorPrefs(context: Context) {
         private const val KEY_CLOUD_FUNCTION_URL = "notif_mirror_cloud_function_url"
         private const val KEY_LAST_SYNC = "notif_mirror_last_sync"
         private const val KEY_SETUP_COMPLETE = "notif_mirror_setup_complete"
+        private const val KEY_DEVICE_LABEL = "notif_mirror_device_label"
 
         const val MODE_SENDER = "sender"
         const val MODE_RECEIVER = "receiver"

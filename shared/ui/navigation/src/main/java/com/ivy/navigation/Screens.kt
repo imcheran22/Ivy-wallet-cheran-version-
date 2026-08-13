@@ -154,13 +154,3 @@ data object SmsDiagnosticScreen : Screen
 data object PartnerTransactionsScreen : Screen
 
 data object FeaturesScreen : Screen
-
-data object AttributionsScreen : Screen
-
-data object ContributorsScreen : Screen
-
-data object ReleasesScreen : Screen
-
-data object DisclaimerScreen : Screen
-
-data object PollScreen : Screen

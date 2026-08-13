@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,36 +45,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.ivy.base.legacy.Theme
+import com.ivy.design.l0_system.Orange
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.design.l1_buildingBlocks.IconScale
 import com.ivy.design.l1_buildingBlocks.IvyIconScaled
 import com.ivy.design.utils.thenIf
-import com.ivy.legacy.Constants
 import com.ivy.legacy.IvyWalletPreview
 import com.ivy.legacy.rootScreen
 import com.ivy.legacy.utils.drawColoredShadow
-import com.ivy.navigation.AttributionsScreen
-import com.ivy.navigation.ContributorsScreen
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
 import com.ivy.navigation.ImportScreen
-import com.ivy.navigation.Navigation
-import com.ivy.navigation.ReleasesScreen
 import com.ivy.navigation.SmsDiagnosticScreen
 import com.ivy.navigation.SmsInboxScreen
 import com.ivy.navigation.navigation
 import com.ivy.navigation.screenScopedViewModel
 import com.ivy.ui.R
 import com.ivy.wallet.domain.data.IvyCurrency
-import com.ivy.wallet.ui.theme.Blue
 import com.ivy.wallet.ui.theme.Gradient
 import com.ivy.wallet.ui.theme.GradientGreen
-import com.ivy.wallet.ui.theme.GradientIvy
 import com.ivy.wallet.ui.theme.Gray
-import com.ivy.wallet.ui.theme.MediumBlack
 import com.ivy.wallet.ui.theme.Red
-import com.ivy.wallet.ui.theme.Red3
 import com.ivy.wallet.ui.theme.White
 import com.ivy.wallet.ui.theme.components.IvySwitch
 import com.ivy.wallet.ui.theme.components.IvyToolbar
@@ -111,6 +102,7 @@ fun BoxWithConstraintsScope.SettingsScreen() {
         startDateOfMonth = uiState.startDateOfMonth.toInt(),
         languageOptionVisible = uiState.languageOptionVisible,
         smsAutoImportEnabled = uiState.smsAutoImportEnabled,
+        smsCapture = uiState.smsCapture,
         cloudSyncEnabled = uiState.cloudSyncEnabled,
         cloudSyncSupabaseUrl = uiState.cloudSyncSupabaseUrl,
         cloudSyncSupabaseAnonKey = uiState.cloudSyncSupabaseAnonKey,
@@ -159,6 +151,9 @@ fun BoxWithConstraintsScope.SettingsScreen() {
         onSetSmsAutoImportEnabled = {
             viewModel.onEvent(SettingsEvent.SetSmsAutoImportEnabled(it))
         },
+        onCatchUpOnSms = {
+            viewModel.onEvent(SettingsEvent.CatchUpOnSms)
+        },
         onSetCloudSyncEnabled = {
             viewModel.onEvent(SettingsEvent.SetCloudSyncEnabled(it))
         },
@@ -204,6 +199,7 @@ private fun BoxWithConstraintsScope.UI(
     onDeleteCloudUserData: () -> Unit = {},
     onSwitchLanguage: () -> Unit = {},
     smsAutoImportEnabled: Boolean = false,
+    smsCapture: SmsCaptureSummary = SmsCaptureSummary(),
     cloudSyncEnabled: Boolean = false,
     cloudSyncSupabaseUrl: String = "",
     cloudSyncSupabaseAnonKey: String = "",
@@ -211,6 +207,7 @@ private fun BoxWithConstraintsScope.UI(
     cloudSyncLastSyncedEpochMs: Long? = null,
     cloudSyncError: String? = null,
     onSetSmsAutoImportEnabled: (Boolean) -> Unit = {},
+    onCatchUpOnSms: () -> Unit = {},
     onSetCloudSyncEnabled: (Boolean) -> Unit = {},
     onSetCloudSyncCredentials: (String, String) -> Unit = { _, _ -> },
     onTriggerCloudSyncNow: () -> Unit = {},
@@ -239,9 +236,6 @@ private fun BoxWithConstraintsScope.UI(
 
                 val rootScreen = rootScreen()
                 Text(
-                    modifier = Modifier.clickable {
-                        nav.navigateTo(ReleasesScreen)
-                    },
                     text = "${rootScreen.buildVersionName} (${rootScreen.buildVersionCode})",
                     style = UI.typo.nC.style(
                         color = UI.colors.gray,
@@ -447,6 +441,13 @@ private fun BoxWithConstraintsScope.UI(
 
             Spacer(Modifier.height(12.dp))
 
+            SmsCaptureStatusCard(
+                summary = smsCapture,
+                onCatchUp = onCatchUpOnSms
+            )
+
+            Spacer(Modifier.height(12.dp))
+
             SettingsDefaultButton(
                 icon = R.drawable.ic_custom_category_m,
                 text = "Sort inbox",
@@ -494,85 +495,6 @@ private fun BoxWithConstraintsScope.UI(
 //                nav.navigateTo(ExperimentalScreen)
 //            }
 //        }
-
-        item {
-            SettingsSectionDivider(text = stringResource(R.string.other))
-
-            Spacer(Modifier.height(16.dp))
-
-            val rootScreen = rootScreen()
-            SettingsPrimaryButton(
-                icon = R.drawable.ic_custom_star_m,
-                text = stringResource(R.string.rate_us_on_google_play),
-                backgroundGradient = GradientIvy
-            ) {
-                rootScreen.reviewIvyWallet(dismissReviewCard = false)
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            SettingsPrimaryButton(
-                icon = R.drawable.ic_custom_family_m,
-                text = stringResource(R.string.share_ivy_wallet),
-                backgroundGradient = Gradient.solid(Red3)
-            ) {
-                rootScreen.shareIvyWallet()
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            SettingsPrimaryButton(
-                icon = R.drawable.github_logo,
-                iconPadding = 10.dp,
-                text = stringResource(R.string.ivy_wallet_is_opensource),
-                backgroundGradient = Gradient.solid(MediumBlack)
-            ) {
-                rootScreen.openUrlInBrowser(url = Constants.URL_IVY_WALLET_REPO)
-            }
-        }
-
-        item {
-            SettingsSectionDivider(text = stringResource(R.string.product))
-
-            Spacer(Modifier.height(12.dp))
-
-            IvyTelegram()
-
-            Spacer(Modifier.height(16.dp))
-
-            HelpCenter()
-
-            Spacer(Modifier.height(12.dp))
-
-            Releases(nav = nav)
-
-            Spacer(Modifier.height(12.dp))
-
-            ReportBug()
-
-            Spacer(Modifier.height(12.dp))
-
-            val rootActivity = rootScreen()
-            RequestFeature {
-                rootActivity.openUrlInBrowser(Constants.URL_GITHUB_NEW_ISSUE)
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            ContactSupport()
-
-            Spacer(Modifier.height(12.dp))
-
-            Contributors(nav = nav)
-
-            Spacer(Modifier.height(12.dp))
-
-            Attributions()
-
-            Spacer(Modifier.height(12.dp))
-
-            TCAndPrivacyPolicy()
-        }
 
         item {
             SettingsSectionDivider(
@@ -741,100 +663,6 @@ private fun CustomFeatures(
 }
 
 @Composable
-private fun IvyTelegram() {
-    val rootActivity = rootScreen()
-    SettingsPrimaryButton(
-        icon = R.drawable.ic_telegram_24dp,
-        text = stringResource(R.string.ivy_telegram),
-        backgroundGradient = Gradient.solid(Blue),
-        iconPadding = 10.dp
-    ) {
-        rootActivity.openUrlInBrowser(Constants.URL_IVY_TELEGRAM_INVITE)
-    }
-}
-
-@Composable
-private fun HelpCenter() {
-    val uriHandler = LocalUriHandler.current
-    SettingsDefaultButton(
-        icon = R.drawable.ic_custom_education_m,
-        text = stringResource(R.string.help_center),
-    ) {
-        uriHandler.openUri(Constants.URL_HELP_CENTER)
-    }
-}
-
-@Composable
-private fun ReportBug() {
-    val uriHandler = LocalUriHandler.current
-    SettingsDefaultButton(
-        icon = R.drawable.ic_vue_dev_arrow,
-        text = stringResource(R.string.report_bug),
-        iconPadding = 10.dp,
-    ) {
-        uriHandler.openUri(Constants.URL_GITHUB_NEW_ISSUE)
-    }
-}
-
-@Composable
-private fun RequestFeature(
-    onClick: () -> Unit
-) {
-    SettingsDefaultButton(
-        icon = R.drawable.ic_custom_programming_m,
-        text = stringResource(R.string.request_a_feature),
-    ) {
-        onClick()
-    }
-}
-
-@Composable
-private fun ContactSupport() {
-    val rootActivity = rootScreen()
-    SettingsDefaultButton(
-        icon = R.drawable.ic_support,
-        text = stringResource(R.string.contact_support),
-    ) {
-        rootActivity.openUrlInBrowser(Constants.URL_IVY_TELEGRAM_INVITE)
-    }
-}
-
-@Composable
-private fun Releases(nav: Navigation) {
-    SettingsDefaultButton(
-        icon = R.drawable.ic_vue_money_tag,
-        text = stringResource(R.string.releases),
-        iconPadding = 8.dp
-    ) {
-        nav.navigateTo(ReleasesScreen)
-    }
-}
-
-@Composable
-private fun Contributors(nav: Navigation) {
-    SettingsDefaultButton(
-        icon = R.drawable.ic_vue_people_people,
-        text = stringResource(R.string.project_contributors),
-        iconPadding = 8.dp
-    ) {
-        nav.navigateTo(ContributorsScreen)
-    }
-}
-
-@Composable
-private fun Attributions() {
-    val nav = navigation()
-
-    SettingsDefaultButton(
-        icon = R.drawable.ic_vue_location_global,
-        text = stringResource(R.string.attributions),
-        iconPadding = 6.dp
-    ) {
-        nav.navigateTo(AttributionsScreen)
-    }
-}
-
-@Composable
 private fun AppThemeButton(
     @DrawableRes icon: Int,
     label: String,
@@ -948,6 +776,128 @@ private fun SmsAutoImportSwitch(
         icon = R.drawable.ic_notification_m
     )
 }
+
+/**
+ * Proof that capture is running, rather than a switch that merely claims to be on.
+ *
+ * Live capture depends on Android delivering an SMS broadcast, and some phones quietly stop
+ * doing that for backgrounded apps. When that happens the switch still reads "on" and no
+ * transactions appear - indistinguishable, from the outside, from a week with no spending.
+ * The counter and the timestamps are what tell those two apart, and "Catch up now" re-reads
+ * the inbox so a suspicion can be settled instead of lived with.
+ */
+@Composable
+private fun SmsCaptureStatusCard(
+    summary: SmsCaptureSummary,
+    onCatchUp: () -> Unit,
+) {
+    if (!summary.enabled) return
+
+    val problem = when {
+        !summary.permissionGranted -> "SMS permission was revoked - turn the switch off and " +
+            "on again to re-request it."
+
+        summary.capturedTotal == 0 -> "Nothing captured yet. If your bank has texted you " +
+            "since you turned this on, run a dry run to see what the parser makes of it."
+
+        else -> null
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .clip(UI.shapes.r4)
+            .background(UI.colors.medium)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+    ) {
+        Text(
+            text = "Capture status",
+            style = UI.typo.b2.style(fontWeight = FontWeight.Bold)
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        StatusLine(label = "Captured so far", value = "${summary.capturedTotal}")
+        StatusLine(label = "Last captured", value = relativeTimeLabel(summary.lastCaptureAtEpochMs))
+        StatusLine(label = "Last checked", value = relativeTimeLabel(summary.lastSweepAtEpochMs))
+        summary.lastSweepSummary?.let {
+            StatusLine(label = "Last result", value = it)
+        }
+
+        if (problem != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = problem,
+                style = UI.typo.c.style(color = Orange, fontWeight = FontWeight.SemiBold)
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            modifier = Modifier
+                .clip(UI.shapes.rFull)
+                .background(UI.colors.pure)
+                .clickable(enabled = !summary.sweeping) { onCatchUp() }
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            text = if (summary.sweeping) "Checking..." else "Catch up now",
+            style = UI.typo.b2.style(
+                color = UI.colors.pureInverse,
+                fontWeight = FontWeight.Bold
+            )
+        )
+
+        Spacer(Modifier.height(6.dp))
+
+        Text(
+            text = "Re-reads your inbox and imports anything that was missed. Safe to run " +
+                "as often as you like - messages already captured are skipped.",
+            style = UI.typo.c.style(color = UI.colors.gray)
+        )
+    }
+}
+
+@Composable
+private fun StatusLine(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+        Text(
+            text = label,
+            style = UI.typo.c.style(color = UI.colors.gray, fontWeight = FontWeight.SemiBold)
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            modifier = Modifier.weight(1.4f),
+            text = value,
+            textAlign = TextAlign.End,
+            style = UI.typo.c.style(
+                color = UI.colors.pureInverse,
+                fontWeight = FontWeight.SemiBold
+            )
+        )
+    }
+}
+
+/**
+ * Absolute timestamps make the reader do arithmetic to answer the only question they have,
+ * which is whether this happened recently enough to trust.
+ */
+private fun relativeTimeLabel(epochMs: Long?): String {
+    if (epochMs == null || epochMs <= 0L) return "Never"
+    val minutes = (System.currentTimeMillis() - epochMs) / MILLIS_PER_MINUTE
+    return when {
+        minutes < 1 -> "Just now"
+        minutes < MINUTES_PER_HOUR -> "$minutes min ago"
+        minutes < MINUTES_PER_DAY -> "${minutes / MINUTES_PER_HOUR} hr ago"
+        minutes < MINUTES_PER_WEEK -> "${minutes / MINUTES_PER_DAY} days ago"
+        else -> SimpleDateFormat("d MMM, h:mm a", Locale.getDefault()).format(Date(epochMs))
+    }
+}
+
+private const val MILLIS_PER_MINUTE = 60_000L
+private const val MINUTES_PER_HOUR = 60L
+private const val MINUTES_PER_DAY = 1_440L
+private const val MINUTES_PER_WEEK = 10_080L
 
 @Composable
 private fun CloudSyncSection(
@@ -1163,57 +1113,6 @@ private fun ExportCSV(
         description = stringResource(R.string.do_not_use_for_backup_purposes)
     ) {
         onExportToCSV()
-    }
-}
-
-@Composable
-private fun TCAndPrivacyPolicy() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Spacer(Modifier.width(16.dp))
-
-        val uriHandler = LocalUriHandler.current
-
-        Text(
-            modifier = Modifier
-                .weight(1f)
-                .clip(UI.shapes.rFull)
-                .border(2.dp, UI.colors.medium, UI.shapes.rFull)
-                .clickable {
-                    uriHandler.openUri(Constants.URL_TC)
-                }
-                .padding(vertical = 14.dp),
-            text = stringResource(R.string.terms_conditions),
-            style = UI.typo.c.style(
-                fontWeight = FontWeight.ExtraBold,
-                color = UI.colors.pureInverse,
-                textAlign = TextAlign.Center
-            )
-        )
-
-        Spacer(Modifier.width(12.dp))
-
-        Text(
-            modifier = Modifier
-                .weight(1f)
-                .clip(UI.shapes.rFull)
-                .border(2.dp, UI.colors.medium, UI.shapes.rFull)
-                .clickable {
-                    uriHandler.openUri(Constants.URL_PRIVACY_POLICY)
-                }
-                .padding(vertical = 14.dp),
-            text = stringResource(R.string.privacy_policy),
-            style = UI.typo.c.style(
-                fontWeight = FontWeight.ExtraBold,
-                color = UI.colors.pureInverse,
-                textAlign = TextAlign.Center
-            )
-        )
-
-        Spacer(Modifier.width(16.dp))
     }
 }
 

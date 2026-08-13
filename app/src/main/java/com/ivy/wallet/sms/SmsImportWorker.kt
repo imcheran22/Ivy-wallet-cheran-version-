@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters
 import com.ivy.data.datastore.DatastoreKeys
 import com.ivy.domain.sync.CloudSyncTrigger
 import com.ivy.domain.usecase.sms.ImportSmsTransactionUseCase
+import com.ivy.domain.usecase.sms.SmsCaptureLog
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,7 @@ class SmsImportWorker @AssistedInject constructor(
     private val importSmsTransactionUseCase: ImportSmsTransactionUseCase,
     private val dataStore: DataStore<Preferences>,
     private val cloudSyncTrigger: CloudSyncTrigger,
+    private val captureLog: SmsCaptureLog,
 ) : CoroutineWorker(appContext, params) {
 
     companion object {
@@ -49,6 +51,22 @@ class SmsImportWorker @AssistedInject constructor(
             runCatching { cloudSyncTrigger.syncNow() }
         }
 
+        // Logged so Settings can show that live capture is genuinely running, and so the next
+        // catch-up sweep starts after this message instead of re-reading it.
+        captureLog.recordSweep(
+            imported = if (result is ImportSmsTransactionUseCase.Result.Imported) 1 else 0,
+            summary = summaryOf(result),
+            newestSeen = receivedAt,
+        )
+
         Result.success()
+    }
+
+    private fun summaryOf(result: ImportSmsTransactionUseCase.Result): String = when (result) {
+        is ImportSmsTransactionUseCase.Result.Imported -> "Captured a message as it arrived"
+        ImportSmsTransactionUseCase.Result.AlreadyImported -> "Message already captured"
+        ImportSmsTransactionUseCase.Result.NotATransaction -> "Message was not a transaction"
+        ImportSmsTransactionUseCase.Result.NoAccountsConfigured -> "No account to file it against"
+        ImportSmsTransactionUseCase.Result.InvalidAmount -> "Could not read the amount"
     }
 }

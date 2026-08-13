@@ -296,6 +296,10 @@ fun CashFlowInfo(
     balance: Double,
     monthlyIncome: Double,
     monthlyExpenses: Double,
+    incomeCount: Int,
+    expenseCount: Int,
+    unsortedIncomeCount: Int,
+    unsortedExpenseCount: Int,
     hideBalance: Boolean,
     hideIncome: Boolean,
     onHiddenIncomeClick: () -> Unit,
@@ -339,6 +343,10 @@ fun CashFlowInfo(
             currency = currency,
             monthlyIncome = monthlyIncome,
             monthlyExpenses = monthlyExpenses,
+            incomeCount = incomeCount,
+            expenseCount = expenseCount,
+            unsortedIncomeCount = unsortedIncomeCount,
+            unsortedExpenseCount = unsortedExpenseCount,
             hideIncome = hideIncome,
             onHiddenIncomeClick = onHiddenIncomeClick
         )
@@ -375,6 +383,10 @@ private fun IncomeExpenses(
     currency: String,
     monthlyIncome: Double,
     monthlyExpenses: Double,
+    incomeCount: Int,
+    expenseCount: Int,
+    unsortedIncomeCount: Int,
+    unsortedExpenseCount: Int,
     hideIncome: Boolean,
     onHiddenIncomeClick: () -> Unit,
 ) {
@@ -394,7 +406,8 @@ private fun IncomeExpenses(
             label = stringResource(R.string.income),
             currency = currency,
             amount = monthlyIncome,
-            testTag = "home_card_income"
+            testTag = "home_card_income",
+            subtitle = countLabel(incomeCount, unsortedIncomeCount),
         ) {
             if (hideIncome) {
                 onHiddenIncomeClick()
@@ -418,6 +431,7 @@ private fun IncomeExpenses(
             currency = currency,
             amount = monthlyExpenses.absoluteValue,
             testTag = "home_card_expense",
+            subtitle = countLabel(expenseCount, unsortedExpenseCount),
         ) {
             nav.navigateTo(
                 PieChartStatisticScreen(
@@ -440,6 +454,7 @@ private fun RowScope.HeaderCard(
     currency: String,
     amount: Double,
     testTag: String,
+    subtitle: String,
     onClick: () -> Unit,
 ) {
     Column(
@@ -498,6 +513,33 @@ private fun RowScope.HeaderCard(
             Spacer(Modifier.width(4.dp))
         }
 
-        Spacer(Modifier.height(20.dp))
+        // Says what the number is made of. A total with no provenance is a number you have to
+        // take on trust, and the whole point of auto-capture is that you shouldn't have to.
+        Spacer(Modifier.height(2.dp))
+
+        Text(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            text = subtitle,
+            style = UI.typo.nC.style(
+                color = textColor.copy(alpha = SUBTITLE_ALPHA),
+                fontWeight = FontWeight.SemiBold,
+            ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Spacer(Modifier.height(16.dp))
     }
+}
+
+private const val SUBTITLE_ALPHA = 0.75f
+
+/**
+ * Counts are deliberately plain: "6 payments" beats "6" because the card is read at a glance
+ * and the unit is the thing that makes it parse.
+ */
+private fun countLabel(count: Int, unsorted: Int): String = when {
+    count == 0 -> "Nothing yet"
+    unsorted > 0 -> "$count · $unsorted to sort"
+    else -> "$count this month"
 }

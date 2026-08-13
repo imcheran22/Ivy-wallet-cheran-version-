@@ -7,8 +7,8 @@ import com.ivy.base.model.TransactionType
 import com.ivy.domain.usecase.sms.BankSmsParser
 import com.ivy.domain.usecase.sms.ImportSmsTransactionUseCase
 import com.ivy.domain.usecase.sms.SmsCategoryGuesser
-import com.ivy.smsinbox.data.DeviceSms
-import com.ivy.smsinbox.data.DeviceSmsReader
+import com.ivy.domain.usecase.sms.DeviceSms
+import com.ivy.domain.usecase.sms.DeviceSmsReader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf

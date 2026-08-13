@@ -63,6 +63,8 @@ object BankSmsParser {
     private const val LABEL_LOOKBEHIND_CHARS = 20
     private const val MIN_PERSON_NAME_WORDS = 2
     private const val MAX_PERSON_NAME_WORDS = 4
+    private const val MIN_MASHED_TOKEN_LENGTH = 12
+    private const val MIN_BRAND_PREFIX_LENGTH = 4
 
     private val ignoredPhrases = listOf(
         "declined", "failed", "reversed", "not successful", "unsuccessful",
@@ -316,6 +318,18 @@ object BankSmsParser {
         return nonTransactionAmountLabels.any { window.endsWith(it) }
     }
 
+    /**
+     * Re-runs the payee tidy-up on a name that is already stored on a transaction.
+     *
+     * Parsing improvements only help messages that arrive afterwards; everything captured
+     * before the fix keeps whatever the parser produced at the time. Rewriting those rows in
+     * the database would be a migration that can only be got wrong once, so screens that show
+     * an auto-imported name run it through here instead and the history reads correctly
+     * without anything being rewritten.
+     */
+    fun readablePayee(stored: String?): String? =
+        stored?.takeIf { it.isNotBlank() }?.let { capPayee(it) } ?: stored
+
     private fun extractPayee(text: String, vpa: String?): String? {
         val normalized = text.replace(Regex("\\s+"), " ")
         upiReferencePayee(normalized)?.let { return it }
@@ -360,12 +374,36 @@ object BankSmsParser {
      */
     private fun capPayee(raw: String): String? {
         var value = raw.split(' ').filter { it.isNotBlank() }
-            .take(MAX_PAYEE_WORDS).joinToString(" ")
+            .take(MAX_PAYEE_WORDS)
+            .mapNotNull(::simplifyMashedToken)
+            .joinToString(" ")
         if (value.length > MAX_PAYEE_LENGTH) value = value.take(MAX_PAYEE_LENGTH).trim()
 
         // A payee with no letters is a reference number that slipped through, not a name.
         if (value.none { it.isLetter() }) return null
         return value.ifBlank { null }
+    }
+
+    /**
+     * Recovers the brand from a merchant token that has a transaction id welded to it.
+     *
+     * QR-code aggregators put the whole acquirer reference in the payee field, so the alert
+     * names you "BHARATPE9O7A7B2M0F2X04941" rather than "BHARATPE". A name you cannot read is
+     * a name you cannot sort by, and the sorting queue groups by payee - left alone, every
+     * single BharatPe payment becomes its own one-off entry that never learns anything.
+     *
+     * Only long letter-and-digit mashes are touched. Ordinary names survive untouched, digits
+     * and all: "AMAZON SELLER SERVICES" and "K MANIKANTA" have no digits, and a short token
+     * like "SWIGGY24" is under the length floor.
+     */
+    private fun simplifyMashedToken(token: String): String? {
+        if (token.length < MIN_MASHED_TOKEN_LENGTH) return token
+        if (token.none(Char::isDigit) || token.none(Char::isLetter)) return token
+
+        val brand = token.takeWhile(Char::isLetter)
+        // Too little leading text to be a brand - the token is a bare reference, so drop it
+        // rather than surface a fragment.
+        return brand.takeIf { it.length >= MIN_BRAND_PREFIX_LENGTH }
     }
 
     /**
