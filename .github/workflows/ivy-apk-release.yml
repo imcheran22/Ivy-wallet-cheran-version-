@@ -1,0 +1,66 @@
+name: Ivy Wallet APK
+
+# Builds the sideloadable APK and attaches it to a GitHub Release, so it can be
+# installed straight from a phone. `demo` is the right build type for this: it
+# is minified like release but signed with the repo's committed debug keystore,
+# so it needs no secrets and installs on any device.
+on:
+  push:
+    branches: ['claude/expense-tracker-quick-log-**']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ivy-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '18'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build demo APK
+        run: ./gradlew assembleDemo --no-daemon --stacktrace
+
+      - name: Stage the APK
+        run: |
+          set -euo pipefail
+          APK=$(find app/build/outputs/apk/demo -name '*.apk' | head -1)
+          test -n "$APK"
+          mkdir -p dist
+          cp "$APK" "dist/IvyWallet-build${{ github.run_number }}.apk"
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ivy-wallet-apk
+          path: dist/*.apk
+          if-no-files-found: error
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="ivy-build${{ github.run_number }}"
+          gh release create "$TAG" dist/*.apk \
+            --title "Ivy Wallet (build ${{ github.run_number }})" \
+            --target "${{ github.sha }}" \
+            --notes "Sideloadable build of Ivy Wallet.
+
+          **Install:** download the \`.apk\` below, open it, and allow installs from your browser when Android asks.
+
+          Built from \`${{ github.sha }}\`."

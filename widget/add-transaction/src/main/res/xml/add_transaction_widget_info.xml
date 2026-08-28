@@ -4,4 +4,5 @@
     android:minResizeWidth="110dp"
     android:previewImage="@drawable/preview_widget_add_trn"
     android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen|keyguard"
     android:updatePeriodMillis="0" />
