@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "SyncSpend",
+    "slug": "syncspend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "syncspend",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.syncspend.app"
+    },
+    "android": {
+      "package": "com.syncspend.app",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": ["expo-blur"]
+  }
+}
