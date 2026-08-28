@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Alert, BackHandler, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,7 +34,13 @@ export function DashboardScreen() {
   // Launched from the lock screen, the activity draws over the keyguard. Once
   // the flow is done there is nothing more this launch was for, and staying
   // open would leave the dashboard one dismiss away from an unlocked phone.
-  const flowClosed = launchedForQuickLog && !quickLog.open;
+  //
+  // Gated on having *seen* the flow open: the launch sets the flag and opens
+  // the flow in two updates, and acting on the gap between them would exit the
+  // app the instant it started.
+  const flowWasOpen = useRef(false);
+  if (quickLog.open) flowWasOpen.current = true;
+  const flowClosed = launchedForQuickLog && flowWasOpen.current && !quickLog.open;
   useEffect(() => {
     if (flowClosed) BackHandler.exitApp();
   }, [flowClosed]);

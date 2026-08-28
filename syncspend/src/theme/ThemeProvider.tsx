@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
-import * as SystemUI from 'expo-system-ui';
 
 import { palettes } from './tokens';
 import type { Palette } from './tokens';
@@ -12,13 +11,6 @@ const ThemeContext = createContext<ThemeValue>({ palette: palettes.light, scheme
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const value = useMemo<ThemeValue>(() => ({ palette: palettes[scheme], scheme }), [scheme]);
-
-  // The window behind the React root is painted by the OS, not by us. Left at
-  // its default it flashes white on a cold start in dark mode, before the first
-  // frame lands.
-  useEffect(() => {
-    void SystemUI.setBackgroundColorAsync(value.palette.surface);
-  }, [value.palette.surface]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

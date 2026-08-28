@@ -34,7 +34,6 @@ module.exports = function withLockScreenQuickLog(config) {
       throw new Error('withLockScreenQuickLog: .MainActivity not found in the manifest');
     }
     mainActivity.$['android:showWhenLocked'] = 'true';
-    mainActivity.$['android:turnScreenOn'] = 'true';
 
     mainActivity['meta-data'] = mainActivity['meta-data'] ?? [];
     if (!mainActivity['meta-data'].some((m) => m.$['android:name'] === 'android.app.shortcuts')) {
@@ -147,8 +146,7 @@ const TILE_ICON = `<?xml version="1.0" encoding="utf-8"?>
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
-    android:viewportHeight="24"
-    android:tint="?android:attr/colorControlNormal">
+    android:viewportHeight="24">
     <path
         android:fillColor="@android:color/white"
         android:pathData="M11,5h2v14h-2z" />
