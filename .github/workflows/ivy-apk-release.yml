@@ -38,15 +38,16 @@ jobs:
       - name: Build demo APK
         run: |
           set -o pipefail
-          ./gradlew assembleDemo --no-daemon 2>&1 | tee /tmp/gradle.log
+          ./gradlew assembleDemo --no-daemon --console=plain 2>&1 | tee /tmp/gradle.log
 
       - name: Show what failed
         if: failure()
         run: |
-          echo "::group::Compile errors"
-          grep -nE "^e: |^w: .*error|error:|Unresolved reference|Execution failed for task|^> |What went wrong" /tmp/gradle.log \
-            | grep -vE "at org\.gradle|at java\.|at kotlin\." | head -80 || echo "(no matching lines)"
-          echo "::endgroup::"
+          echo "----- errors -----"
+          grep -nE "^e: |Unresolved reference|Execution failed for task|^FAILURE:|^\* What went wrong" \
+            /tmp/gradle.log | head -40 || true
+          echo "----- tail, minus task list and stack frames -----"
+          grep -vE "^> Task |^\s+at |^\s+\.\.\. |^Caused by: org\.gradle" /tmp/gradle.log | tail -45 || true
 
       - name: Upload full build log
         if: failure()
