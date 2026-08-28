@@ -1,32 +1,50 @@
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FloatingActionButton } from '../components/common/FloatingActionButton';
+import { EmptyState } from '../components/dashboard/EmptyState';
 import { TransactionRow } from '../components/dashboard/TransactionRow';
 import { WeekBarChart } from '../components/dashboard/WeekBarChart';
 import { QuickLogFlow } from '../components/quicklog/QuickLogFlow';
 import { DEFAULT_CURRENCY } from '../data/catalog';
 import { useExpenses } from '../state/ExpenseStore';
-import { color, space, type } from '../theme/tokens';
+import { useStyles } from '../theme/ThemeProvider';
+import type { Palette } from '../theme/tokens';
+import { space, type } from '../theme/tokens';
+import type { Expense } from '../types';
 import { formatMinorUnits } from '../utils/money';
 
-const LATEST_LIMIT = 20;
+const LATEST_LIMIT = 30;
 
 export function DashboardScreen() {
+  const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { expenses, hydrated, weekTotalMinor, weekBuckets, openQuickLog } = useExpenses();
-  const latest = expenses.slice(0, LATEST_LIMIT);
+  const { expenses, hydrated, weekTotalMinor, weekBuckets, openQuickLog, deleteExpense } = useExpenses();
+
+  const confirmDelete = useCallback(
+    (expense: Expense) => {
+      Alert.alert(
+        'Delete expense?',
+        expense.title + ' — ' + formatMinorUnits(expense.amountMinor, expense.currency),
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: () => deleteExpense(expense.id) },
+        ],
+      );
+    },
+    [deleteExpense],
+  );
 
   return (
     <View style={styles.screen}>
       <FlatList
-        data={latest}
+        data={expenses.slice(0, LATEST_LIMIT)}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TransactionRow expense={item} />}
+        renderItem={({ item }) => <TransactionRow expense={item} onLongPress={confirmDelete} />}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + space.xl, paddingBottom: insets.bottom + 96 },
+          { paddingTop: insets.top + space.xl, paddingBottom: insets.bottom + 110 },
         ]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
@@ -36,29 +54,25 @@ export function DashboardScreen() {
               {formatMinorUnits(weekTotalMinor, DEFAULT_CURRENCY)}
             </Text>
 
-            <WeekBarChart buckets={weekBuckets} />
+            <WeekBarChart buckets={weekBuckets} currency={DEFAULT_CURRENCY} />
 
             <Text style={styles.sectionTitle}>Latest</Text>
           </View>
         }
-        ListEmptyComponent={
-          hydrated ? (
-            <Text style={styles.empty}>Nothing logged yet. Tap + to add your first expense.</Text>
-          ) : null
-        }
+        ListEmptyComponent={hydrated ? <EmptyState /> : null}
       />
 
-      <FloatingActionButton onPress={openQuickLog} />
+      <FloatingActionButton onPress={openQuickLog} bottomInset={insets.bottom} />
       <QuickLogFlow />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: color.surface },
-  content: { paddingHorizontal: space.xl },
-  eyebrow: { ...type.label, color: color.inkMuted },
-  total: { ...type.hero, color: color.ink, marginTop: space.sm },
-  sectionTitle: { ...type.title, color: color.ink, marginTop: space.xxl, marginBottom: space.xs },
-  empty: { ...type.label, color: color.inkMuted, marginTop: space.lg },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.surface },
+    content: { paddingHorizontal: space.xl },
+    eyebrow: { ...type.label, color: c.inkMuted },
+    total: { ...type.hero, color: c.ink, marginTop: space.sm },
+    sectionTitle: { ...type.title, color: c.ink, marginTop: space.xxl, marginBottom: space.xs },
+  });

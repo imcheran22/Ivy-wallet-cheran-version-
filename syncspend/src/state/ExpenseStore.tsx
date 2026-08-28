@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
+import * as Haptics from 'expo-haptics';
 
 import { loadExpenses, saveExpenses } from '../storage/expenseRepository';
 import type { Expense } from '../types';
@@ -15,6 +16,7 @@ type ExpenseContextValue = {
   dispatchQuickLog: React.Dispatch<Parameters<typeof quickLogReducer>[1]>;
   /** Commits the current draft and closes the flow. */
   confirmQuickLog: () => void;
+  deleteExpense: (id: string) => void;
   weekTotalMinor: number;
   /** Sun..Sat totals for the current week, in minor units. */
   weekBuckets: number[];
@@ -31,7 +33,7 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     void loadExpenses().then((loaded) => {
       if (cancelled) return;
-      setExpenses(loaded);
+      setExpenses(sortNewestFirst(loaded));
       setHydrated(true);
     });
     return () => {
@@ -49,9 +51,16 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
   const confirmQuickLog = useCallback(() => {
     if (!quickLog.open) return;
     const expense = draftToExpense(quickLog.draft, newId());
-    setExpenses((current) => [expense, ...current]);
+    setExpenses((current) => sortNewestFirst([expense, ...current]));
     dispatchQuickLog({ type: 'cancel' });
+    // The card vanishing is the only other signal that the save landed, and it
+    // looks identical to Cancel. The tap confirms which of the two happened.
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, [quickLog]);
+
+  const deleteExpense = useCallback((id: string) => {
+    setExpenses((current) => current.filter((expense) => expense.id !== id));
+  }, []);
 
   const week = useMemo(() => summariseWeek(expenses), [expenses]);
 
@@ -64,10 +73,11 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
       cancelQuickLog: () => dispatchQuickLog({ type: 'cancel' }),
       dispatchQuickLog,
       confirmQuickLog,
+      deleteExpense,
       weekTotalMinor: week.totalMinor,
       weekBuckets: week.buckets,
     }),
-    [expenses, hydrated, quickLog, confirmQuickLog, week],
+    [expenses, hydrated, quickLog, confirmQuickLog, deleteExpense, week],
   );
 
   return <ExpenseContext.Provider value={value}>{children}</ExpenseContext.Provider>;
@@ -77,6 +87,11 @@ export function useExpenses(): ExpenseContextValue {
   const ctx = useContext(ExpenseContext);
   if (!ctx) throw new Error('useExpenses must be used inside <ExpenseProvider>');
   return ctx;
+}
+
+/** "Latest" means by when the money was spent, not by when the row was typed. */
+function sortNewestFirst(expenses: Expense[]): Expense[] {
+  return [...expenses].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 }
 
 function newId(): string {

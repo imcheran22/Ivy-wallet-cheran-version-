@@ -1,15 +1,30 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 import { CategoryIcon } from '../common/CategoryIcon';
-import { color, space, type } from '../../theme/tokens';
+import { useStyles } from '../../theme/ThemeProvider';
+import type { Palette } from '../../theme/tokens';
+import { space, type } from '../../theme/tokens';
 import type { Expense } from '../../types';
 import { relativeDayLabel } from '../../utils/dates';
 import { formatMinorUnits } from '../../utils/money';
 
-export function TransactionRow({ expense }: { expense: Expense }) {
+type Props = { expense: Expense; onLongPress: (expense: Expense) => void };
+
+export function TransactionRow({ expense, onLongPress }: Props) {
+  const styles = useStyles(makeStyles);
   return (
-    <View style={styles.row}>
+    <Pressable
+      testID={'transaction-' + expense.id}
+      accessibilityRole="button"
+      accessibilityHint="Long press to delete"
+      onLongPress={() => {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onLongPress(expense);
+      }}
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+    >
       <CategoryIcon categoryId={expense.categoryId} />
       <View style={styles.middle}>
         <Text style={styles.title} numberOfLines={1}>
@@ -18,14 +33,16 @@ export function TransactionRow({ expense }: { expense: Expense }) {
         <Text style={styles.date}>{relativeDayLabel(expense.occurredAt)}</Text>
       </View>
       <Text style={styles.amount}>{formatMinorUnits(expense.amountMinor, expense.currency)}</Text>
-    </View>
+    </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: space.md },
-  middle: { flex: 1, marginHorizontal: space.md },
-  title: { ...type.body, color: color.ink },
-  date: { ...type.caption, color: color.inkMuted, marginTop: 2 },
-  amount: { ...type.body, color: color.ink },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: space.md },
+    rowPressed: { opacity: 0.55 },
+    middle: { flex: 1, marginHorizontal: space.md },
+    title: { ...type.body, color: c.ink },
+    date: { ...type.caption, color: c.inkMuted, marginTop: 2 },
+    amount: { ...type.body, color: c.ink },
+  });

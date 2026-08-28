@@ -1,42 +1,70 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '../common/Button';
-import { ACCOUNTS, PAYMENT_METHODS, labelOf, categoryById } from '../../data/catalog';
-import { color, space, type } from '../../theme/tokens';
-import type { Draft } from '../../state/quickLogMachine';
+import { ACCOUNTS, PAYMENT_METHODS, categoryById, labelOf } from '../../data/catalog';
+import type { Draft, Step } from '../../state/quickLogMachine';
+import { useStyles, useTheme } from '../../theme/ThemeProvider';
+import type { Palette } from '../../theme/tokens';
+import { space, type } from '../../theme/tokens';
 import { fullDateLabel } from '../../utils/dates';
 import { formatMinorUnits, toMinorUnits } from '../../utils/money';
 
 type Props = {
   draft: Draft;
+  onEdit: (step: Step) => void;
   onBack: () => void;
   onContinue: () => void;
 };
 
-export function ConfirmStep({ draft, onBack, onContinue }: Props) {
-  const rows: Array<[string, string]> = [
-    ['Title', draft.title.trim()],
-    ['Account', labelOf(ACCOUNTS, draft.accountId)],
-    ['Category', draft.categoryId ? categoryById(draft.categoryId)?.label ?? draft.categoryId : '—'],
-    ['Payment', labelOf(PAYMENT_METHODS, draft.paymentMethodId)],
-    ['Date', fullDateLabel(draft.occurredAt)],
+export function ConfirmStep({ draft, onEdit, onBack, onContinue }: Props) {
+  const styles = useStyles(makeStyles);
+  const { palette } = useTheme();
+
+  // Every row except the date is a question that was asked earlier, so every
+  // row except the date can be re-answered by tapping it. Sending the user
+  // back through Back four times to fix a typo is the thing this flow exists
+  // to avoid.
+  const rows: Array<{ label: string; value: string; edit?: Step }> = [
+    { label: 'Title', value: draft.title.trim(), edit: 'name' },
+    { label: 'Account', value: labelOf(ACCOUNTS, draft.accountId), edit: 'account' },
+    {
+      label: 'Category',
+      value: draft.categoryId ? categoryById(draft.categoryId)?.label ?? draft.categoryId : '—',
+      edit: 'category',
+    },
+    { label: 'Payment', value: labelOf(PAYMENT_METHODS, draft.paymentMethodId), edit: 'payment' },
+    { label: 'Date', value: fullDateLabel(draft.occurredAt) },
   ];
 
   return (
     <View>
-      <Text testID="quicklog-confirm-amount" style={styles.amount} numberOfLines={1} adjustsFontSizeToFit>
-        {formatMinorUnits(toMinorUnits(draft.amountInput), draft.currency)}
-      </Text>
+      <Pressable onPress={() => onEdit('amount')} accessibilityRole="button" accessibilityLabel="Edit amount">
+        <Text testID="quicklog-confirm-amount" style={styles.amount} numberOfLines={1} adjustsFontSizeToFit>
+          {formatMinorUnits(toMinorUnits(draft.amountInput), draft.currency)}
+        </Text>
+      </Pressable>
 
       <View style={styles.table}>
-        {rows.map(([label, value], index) => (
-          <View key={label} style={[styles.row, index > 0 && styles.rowDivided]}>
-            <Text style={styles.rowLabel}>{label}</Text>
+        {rows.map((row, index) => (
+          <Pressable
+            key={row.label}
+            disabled={!row.edit}
+            onPress={() => row.edit && onEdit(row.edit)}
+            accessibilityRole={row.edit ? 'button' : 'text'}
+            style={({ pressed }) => [styles.row, index > 0 && styles.rowDivided, pressed && styles.rowPressed]}
+          >
+            <Text style={styles.rowLabel}>{row.label}</Text>
             <Text style={styles.rowValue} numberOfLines={1}>
-              {value}
+              {row.value}
             </Text>
-          </View>
+            {row.edit ? (
+              <Ionicons name="chevron-forward" size={15} color={palette.inkFaint} style={styles.chevron} />
+            ) : (
+              <View style={styles.chevronSpacer} />
+            )}
+          </Pressable>
         ))}
       </View>
 
@@ -49,18 +77,17 @@ export function ConfirmStep({ draft, onBack, onContinue }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  amount: { ...type.amount, color: color.ink, textAlign: 'center' },
-  table: { marginTop: space.xl },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: space.md,
-  },
-  rowDivided: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.hairline },
-  rowLabel: { ...type.label, color: color.inkMuted },
-  rowValue: { ...type.label, color: color.ink, flexShrink: 1, marginLeft: space.lg, textAlign: 'right' },
-  footer: { flexDirection: 'row', marginTop: space.lg },
-  gap: { width: space.md },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    amount: { ...type.amount, color: c.ink, textAlign: 'center' },
+    table: { marginTop: space.lg },
+    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: space.md },
+    rowDivided: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.hairline },
+    rowPressed: { opacity: 0.5 },
+    rowLabel: { ...type.label, color: c.inkMuted },
+    rowValue: { ...type.label, color: c.ink, flex: 1, marginLeft: space.lg, textAlign: 'right' },
+    chevron: { marginLeft: space.xs },
+    chevronSpacer: { width: 19 },
+    footer: { flexDirection: 'row', marginTop: space.lg },
+    gap: { width: space.md },
+  });

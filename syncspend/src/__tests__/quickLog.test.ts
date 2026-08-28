@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { canAdvance, draftToExpense, emptyDraft, quickLogReducer } from '../state/quickLogMachine';
+import { FLOW, canAdvance, draftToExpense, emptyDraft, flowIndex, isDetour, quickLogReducer } from '../state/quickLogMachine';
 import { summariseWeek } from '../state/weekSummary';
 import { formatMinorUnits, pressBackspace, pressDecimalPoint, pressDigit, toMinorUnits } from '../utils/money';
 import { startOfWeek } from '../utils/dates';
@@ -130,4 +130,46 @@ test('the week summary buckets Sun..Sat and ignores other weeks', () => {
 
   assert.equal(totalMinor, 1750);
   assert.deepEqual(buckets, [1000, 0, 0, 750, 0, 0, 0]);
+});
+
+test('the confirmation card can jump back to an already-answered step', () => {
+  let state = quickLogReducer({ open: false }, { type: 'open' });
+  state = quickLogReducer(state, { type: 'setTitle', title: 'Coffee' });
+  state = quickLogReducer(state, { type: 'next' });
+  state = quickLogReducer(state, { type: 'setAmountInput', amountInput: '5' });
+  state = quickLogReducer(state, { type: 'next' });
+  state = quickLogReducer(state, { type: 'pickCategory', categoryId: 'food' });
+  assert.equal(state.open && state.step, 'confirm');
+
+  state = quickLogReducer(state, { type: 'goto', step: 'name' });
+  assert.equal(state.open && state.step, 'name');
+  assert.equal(state.open && state.draft.title, 'Coffee');
+});
+
+test('goto cannot skip forward past an unanswered step', () => {
+  const opened = quickLogReducer({ open: false }, { type: 'open' });
+  assert.deepEqual(quickLogReducer(opened, { type: 'goto', step: 'confirm' }), opened);
+});
+
+test('account and payment detours return to the confirmation card', () => {
+  let state = quickLogReducer({ open: false }, { type: 'open' });
+  state = quickLogReducer(state, { type: 'goto', step: 'account' });
+  assert.equal(state.open && state.step, 'account');
+
+  state = quickLogReducer(state, { type: 'pickAccount', accountId: 'joint' });
+  assert.equal(state.open && state.step, 'confirm');
+  assert.equal(state.open && state.draft.accountId, 'joint');
+
+  state = quickLogReducer(state, { type: 'goto', step: 'payment' });
+  state = quickLogReducer(state, { type: 'back' });
+  assert.equal(state.open && state.step, 'confirm');
+  assert.equal(state.open && state.draft.paymentMethodId, 'credit-card');
+});
+
+test('detours are off the linear path, so the dots keep counting four', () => {
+  assert.equal(FLOW.length, 4);
+  assert.equal(isDetour('account'), true);
+  assert.equal(isDetour('category'), false);
+  assert.equal(flowIndex('confirm'), 3);
+  assert.equal(flowIndex('payment'), -1);
 });

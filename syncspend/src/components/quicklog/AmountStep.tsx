@@ -2,7 +2,9 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../common/Button';
-import { color, space, type } from '../../theme/tokens';
+import { useStyles } from '../../theme/ThemeProvider';
+import type { Palette } from '../../theme/tokens';
+import { space, type } from '../../theme/tokens';
 import { formatAmountInput, pressBackspace, pressDecimalPoint, pressDigit } from '../../utils/money';
 
 import { Numpad } from './Numpad';
@@ -17,6 +19,8 @@ type Props = {
 };
 
 export function AmountStep({ amountInput, currency, onChange, onBack, onDone, canAdvance }: Props) {
+  const styles = useStyles(makeStyles);
+
   const handleKey = (key: string) => {
     if (key === 'backspace') return onChange(pressBackspace(amountInput));
     if (key === '.') return onChange(pressDecimalPoint(amountInput));
@@ -30,6 +34,7 @@ export function AmountStep({ amountInput, currency, onChange, onBack, onDone, ca
         style={[styles.display, amountInput === '' && styles.displayEmpty]}
         numberOfLines={1}
         adjustsFontSizeToFit
+        accessibilityLiveRegion="polite"
       >
         {formatAmountInput(amountInput, currency)}
       </Text>
@@ -45,14 +50,10 @@ export function AmountStep({ amountInput, currency, onChange, onBack, onDone, ca
   );
 }
 
-const styles = StyleSheet.create({
-  display: {
-    ...type.amount,
-    color: color.ink,
-    textAlign: 'center',
-    marginBottom: space.xl,
-  },
-  displayEmpty: { color: color.inkFaint },
-  row: { flexDirection: 'row', marginTop: space.sm },
-  gap: { width: space.md },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    display: { ...type.amount, color: c.ink, textAlign: 'center', marginBottom: space.lg },
+    displayEmpty: { color: c.inkFaint },
+    row: { flexDirection: 'row', marginTop: space.sm },
+    gap: { width: space.md },
+  });

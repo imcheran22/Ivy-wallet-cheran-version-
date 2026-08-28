@@ -5,20 +5,38 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "syncspend",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.syncspend.app"
     },
     "android": {
       "package": "com.syncspend.app",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0C"
+      }
     },
-    "plugins": ["expo-blur"]
+    "web": { "favicon": "./assets/favicon.png" },
+    "plugins": [
+      "expo-blur",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#0B0B0C"
+          }
+        }
+      ]
+    ]
   }
 }

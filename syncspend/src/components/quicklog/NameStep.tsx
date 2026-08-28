@@ -2,7 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '../common/Button';
-import { color, radius, space, type } from '../../theme/tokens';
+import { useStyles, useTheme } from '../../theme/ThemeProvider';
+import type { Palette } from '../../theme/tokens';
+import { radius, space, type } from '../../theme/tokens';
 
 type Props = {
   value: string;
@@ -13,12 +15,14 @@ type Props = {
 };
 
 export function NameStep({ value, onChange, onCancel, onDone, canAdvance }: Props) {
+  const styles = useStyles(makeStyles);
+  const { palette, scheme } = useTheme();
   const inputRef = useRef<TextInput>(null);
 
-  // The point of the flow is that logging costs one gesture. Waiting for the
-  // user to tap the field before the keyboard appears spends that gesture.
+  // The point of the flow is that logging costs one gesture. Making the user
+  // tap the field before the keyboard appears spends that gesture.
   useEffect(() => {
-    const timer = setTimeout(() => inputRef.current?.focus(), 80);
+    const timer = setTimeout(() => inputRef.current?.focus(), 90);
     return () => clearTimeout(timer);
   }, []);
 
@@ -31,10 +35,12 @@ export function NameStep({ value, onChange, onCancel, onDone, canAdvance }: Prop
         onChangeText={onChange}
         onSubmitEditing={() => canAdvance && onDone()}
         placeholder="Coffee"
-        placeholderTextColor={color.inkFaint}
+        placeholderTextColor={palette.inkFaint}
+        keyboardAppearance={scheme}
         returnKeyType="done"
         autoCapitalize="sentences"
         autoCorrect={false}
+        maxLength={60}
         style={styles.input}
       />
       <View style={styles.row}>
@@ -46,15 +52,16 @@ export function NameStep({ value, onChange, onCancel, onDone, canAdvance }: Prop
   );
 }
 
-const styles = StyleSheet.create({
-  input: {
-    ...type.body,
-    color: color.ink,
-    backgroundColor: color.surfaceSunken,
-    borderRadius: radius.md,
-    paddingHorizontal: space.lg,
-    height: 52,
-  },
-  row: { flexDirection: 'row', marginTop: space.lg },
-  gap: { width: space.md },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    input: {
+      ...type.body,
+      color: c.ink,
+      backgroundColor: c.surfaceSunken,
+      borderRadius: radius.md,
+      paddingHorizontal: space.lg,
+      height: 52,
+    },
+    row: { flexDirection: 'row', marginTop: space.lg },
+    gap: { width: space.md },
+  });

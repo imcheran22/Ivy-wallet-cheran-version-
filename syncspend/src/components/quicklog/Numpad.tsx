@@ -3,16 +3,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
-import { color, radius, space } from '../../theme/tokens';
+import { useStyles, useTheme } from '../../theme/ThemeProvider';
+import type { Palette } from '../../theme/tokens';
+import { radius, space } from '../../theme/tokens';
 
-type Key = { label: string; value: string } | { label: 'backspace'; value: 'backspace' };
-
-const KEYS: Key[] = [
-  { label: '1', value: '1' }, { label: '2', value: '2' }, { label: '3', value: '3' },
-  { label: '4', value: '4' }, { label: '5', value: '5' }, { label: '6', value: '6' },
-  { label: '7', value: '7' }, { label: '8', value: '8' }, { label: '9', value: '9' },
-  { label: '.', value: '.' }, { label: '0', value: '0' }, { label: 'backspace', value: 'backspace' },
-];
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'] as const;
 
 type Props = { onKey: (value: string) => void };
 
@@ -22,24 +17,27 @@ type Props = { onKey: (value: string) => void };
  * parser would have to reject, and it never resizes the card mid-flow.
  */
 export function Numpad({ onKey }: Props) {
+  const styles = useStyles(makeStyles);
+  const { palette } = useTheme();
+
   return (
     <View style={styles.grid}>
       {KEYS.map((key) => (
         <Pressable
-          key={key.value}
-          testID={'numpad-' + key.value}
+          key={key}
+          testID={'numpad-' + key}
           accessibilityRole="button"
-          accessibilityLabel={key.value === 'backspace' ? 'Delete' : key.label}
+          accessibilityLabel={key === 'backspace' ? 'Delete' : key}
           onPress={() => {
             void Haptics.selectionAsync();
-            onKey(key.value);
+            onKey(key);
           }}
           style={({ pressed }) => [styles.key, pressed && styles.keyPressed]}
         >
-          {key.value === 'backspace' ? (
-            <Ionicons name="backspace-outline" size={24} color={color.ink} />
+          {key === 'backspace' ? (
+            <Ionicons name="backspace-outline" size={24} color={palette.ink} />
           ) : (
-            <Text style={styles.keyLabel}>{key.label}</Text>
+            <Text style={styles.keyLabel}>{key}</Text>
           )}
         </Pressable>
       ))}
@@ -47,21 +45,18 @@ export function Numpad({ onKey }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  key: {
-    width: '31%',
-    height: 58,
-    marginBottom: space.sm,
-    borderRadius: radius.md,
-    backgroundColor: color.surfaceSunken,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  keyPressed: { backgroundColor: color.hairline },
-  keyLabel: { fontSize: 24, fontWeight: '500', color: color.ink },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    key: {
+      width: '31.5%',
+      height: 56,
+      marginBottom: space.sm,
+      borderRadius: radius.md,
+      backgroundColor: c.surfaceSunken,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    keyPressed: { backgroundColor: c.hairline },
+    keyLabel: { fontSize: 24, fontWeight: '500', color: c.ink },
+  });
