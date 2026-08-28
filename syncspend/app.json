@@ -8,7 +8,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.syncspend.app"
@@ -21,9 +23,10 @@
         "backgroundColor": "#0A0A0C"
       }
     },
-    "web": { "favicon": "./assets/favicon.png" },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
     "plugins": [
-      "expo-blur",
       [
         "expo-splash-screen",
         {
@@ -36,7 +39,8 @@
             "backgroundColor": "#0B0B0C"
           }
         }
-      ]
+      ],
+      "./plugins/withLockScreenQuickLog"
     ]
   }
 }

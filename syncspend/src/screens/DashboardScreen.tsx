@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { Alert, BackHandler, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FloatingActionButton } from '../components/common/FloatingActionButton';
@@ -20,7 +20,24 @@ const LATEST_LIMIT = 30;
 export function DashboardScreen() {
   const styles = useStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { expenses, hydrated, weekTotalMinor, weekBuckets, openQuickLog, deleteExpense } = useExpenses();
+  const {
+    expenses,
+    hydrated,
+    weekTotalMinor,
+    weekBuckets,
+    openQuickLog,
+    deleteExpense,
+    quickLog,
+    launchedForQuickLog,
+  } = useExpenses();
+
+  // Launched from the lock screen, the activity draws over the keyguard. Once
+  // the flow is done there is nothing more this launch was for, and staying
+  // open would leave the dashboard one dismiss away from an unlocked phone.
+  const flowClosed = launchedForQuickLog && !quickLog.open;
+  useEffect(() => {
+    if (flowClosed) BackHandler.exitApp();
+  }, [flowClosed]);
 
   const confirmDelete = useCallback(
     (expense: Expense) => {
@@ -35,6 +52,16 @@ export function DashboardScreen() {
     },
     [deleteExpense],
   );
+
+  if (launchedForQuickLog) {
+    // A blank surface, not the dashboard: the totals and the list of what the
+    // owner buys are exactly what a locked phone should not be showing.
+    return (
+      <View style={styles.screen}>
+        <QuickLogFlow />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>

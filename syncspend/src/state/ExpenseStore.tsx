@@ -5,6 +5,7 @@ import { loadExpenses, saveExpenses } from '../storage/expenseRepository';
 import type { Expense } from '../types';
 import { closedState, draftToExpense, quickLogReducer } from './quickLogMachine';
 import type { QuickLogState } from './quickLogMachine';
+import { useQuickLogLaunch } from './useQuickLogLaunch';
 import { summariseWeek } from './weekSummary';
 
 type ExpenseContextValue = {
@@ -20,6 +21,12 @@ type ExpenseContextValue = {
   weekTotalMinor: number;
   /** Sun..Sat totals for the current week, in minor units. */
   weekBuckets: number[];
+  /**
+   * True when this launch came from the tile or the launcher shortcut. The
+   * activity draws over the keyguard, so the dashboard — which is a list of
+   * what the owner spends money on — must stay hidden behind the flow.
+   */
+  launchedForQuickLog: boolean;
 };
 
 const ExpenseContext = createContext<ExpenseContextValue | null>(null);
@@ -28,6 +35,14 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [quickLog, dispatchQuickLog] = useReducer(quickLogReducer, closedState);
+  const [launchedForQuickLog, setLaunchedForQuickLog] = useState(false);
+
+  useQuickLogLaunch(
+    useCallback(() => {
+      setLaunchedForQuickLog(true);
+      dispatchQuickLog({ type: 'open' });
+    }, []),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -76,8 +91,9 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
       deleteExpense,
       weekTotalMinor: week.totalMinor,
       weekBuckets: week.buckets,
+      launchedForQuickLog,
     }),
-    [expenses, hydrated, quickLog, confirmQuickLog, deleteExpense, week],
+    [expenses, hydrated, quickLog, confirmQuickLog, deleteExpense, week, launchedForQuickLog],
   );
 
   return <ExpenseContext.Provider value={value}>{children}</ExpenseContext.Provider>;

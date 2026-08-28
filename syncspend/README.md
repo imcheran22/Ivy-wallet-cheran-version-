@@ -26,6 +26,32 @@ npm test         # pure-logic tests (13)
 npm run typecheck
 ```
 
+## Logging from the lock screen
+
+Android gives a third-party app **no lock-screen widget on a phone** — they were
+removed in 5.0, and the Android 16 revival is tablets and docks only. Nothing in
+this repo can change that. What is available on a Pixel, and what this app uses:
+
+| Entry point | How you reach it | Unlock needed |
+|---|---|---|
+| **Quick Settings tile** | Swipe the shade down *on the lock screen*, tap **Log expense** | No |
+| **Launcher shortcut** | Long-press the app icon → **Log expense** | Yes (home screen is behind the lock) |
+| **FAB** | Open the app, tap **+** | Yes |
+
+`MainActivity` carries `android:showWhenLocked`, so the flow draws over the
+keyguard instead of sending you through an unlock first. All three fire the same
+`syncspend://quick-log` deep link, read in JS by `useQuickLogLaunch`.
+
+**One-time setup on the Pixel:** pull down the shade → pencil/edit → drag **Log
+expense** into the active tiles. Then check Settings → Display → *Lock screen* →
+"Quick Settings from lock screen" is on.
+
+Launched that way the app shows **only** the entry flow on a blank surface, never
+the dashboard, and exits when the flow ends — a phone drawing over its own
+keyguard should not also be listing what its owner spends money on. First boot is
+the exception: until the phone has been unlocked once, Android keeps app storage
+encrypted, so a save has to wait for that first unlock.
+
 ## Architecture
 
 ```
@@ -36,7 +62,8 @@ App.tsx
             ├── WeekBarChart ... Sun..Sat bars, peak labelled
             ├── TransactionRow[]  the "Latest" list (long-press to delete)
             ├── FloatingActionButton
-            └── QuickLogFlow ... backdrop + step routing
+            └── QuickLogFlow ... backdrop + step routing (also opened by the
+                                  QS tile / shortcut deep link)
                 └── ModalShell . one card, contents cross-fade per step
                     ├── StepDots
                     ├── NameStep
@@ -52,6 +79,7 @@ App.tsx
 | State | `src/state/ExpenseStore.tsx` | Context + AsyncStorage persistence |
 | Storage | `src/storage/expenseRepository.ts` | Read/write the log, tolerate a corrupt blob |
 | Theme | `src/theme/` | Palettes + `useStyles`, rebuilt per palette |
+| Native | `plugins/withLockScreenQuickLog.js` | QS tile, shortcut, `showWhenLocked` — generated, not committed |
 | UI | `src/components`, `src/screens` | Views over the state above |
 
 ### Three decisions worth knowing
