@@ -6,7 +6,17 @@ The whole premise is that logging an expense should cost about as much attention
 as not logging it. A long form loses that race, so entry is four one-question
 modals over a blurred backdrop, each answerable with a thumb.
 
-## Run it
+## Install it on a phone
+
+Every push builds a signed APK and attaches it to a **GitHub Release**. On the
+phone: open the repo's Releases page, download the `.apk`, tap it, and allow
+installs from your browser when Android asks.
+
+It is signed with Expo's debug keystore, which means it installs *alongside*
+anything from the Play Store rather than over it — fine for sideloading, not
+something to publish.
+
+## Run it from source
 
 ```bash
 cd syncspend
@@ -20,17 +30,19 @@ npm run typecheck
 
 ```
 App.tsx
-└── ExpenseProvider ............ single source of truth (expenses + flow state)
-    └── DashboardScreen
-        ├── WeekBarChart ....... Sun..Sat bars
-        ├── TransactionRow[] ... the "Latest" list
-        ├── FloatingActionButton
-        └── QuickLogFlow ....... backdrop + step routing
-            └── ModalShell ..... one card, contents cross-fade per step
-                ├── NameStep
-                ├── AmountStep (+ Numpad)
-                ├── CategoryStep
-                └── ConfirmStep
+└── ThemeProvider .............. light/dark palette from the system
+    └── ExpenseProvider ........ single source of truth (expenses + flow state)
+        └── DashboardScreen
+            ├── WeekBarChart ... Sun..Sat bars, peak labelled
+            ├── TransactionRow[]  the "Latest" list (long-press to delete)
+            ├── FloatingActionButton
+            └── QuickLogFlow ... backdrop + step routing
+                └── ModalShell . one card, contents cross-fade per step
+                    ├── StepDots
+                    ├── NameStep
+                    ├── AmountStep (+ Numpad)
+                    ├── OptionListStep  (category / account / payment)
+                    └── ConfirmStep
 ```
 
 | Layer | Files | Responsibility |
@@ -39,6 +51,7 @@ App.tsx
 | Logic | `src/state/quickLogMachine.ts`, `src/state/weekSummary.ts`, `src/utils/` | Pure, no React, fully tested |
 | State | `src/state/ExpenseStore.tsx` | Context + AsyncStorage persistence |
 | Storage | `src/storage/expenseRepository.ts` | Read/write the log, tolerate a corrupt blob |
+| Theme | `src/theme/` | Palettes + `useStyles`, rebuilt per palette |
 | UI | `src/components`, `src/screens` | Views over the state above |
 
 ### Three decisions worth knowing
@@ -70,16 +83,23 @@ up showing bars that don't add up to the number above them.
 
 Cancel, Back, and tapping the blurred backdrop all discard without writing.
 
+Every row on the confirmation card jumps back to the question it answers, so
+fixing a typo is one tap rather than four Backs. **Account** and **Payment** are
+reachable only from that card — putting them in the linear flow would tax every
+entry with two questions the defaults answer nine times out of ten.
+
 The numpad is custom rather than the system numeric keyboard so it can be
 reached with a thumb, cannot offer a comma or minus sign the parser would have
 to reject, and never resizes the card mid-flow.
 
 ## Not built
 
-- **Editing and deleting.** Rows are append-only today.
+- **Editing.** A saved row can be deleted (long-press) but not edited.
 - **Multiple currencies.** `Expense.currency` exists and is respected by the
   formatter, but the week total sums minor units blind — correct only while one
   currency is in play.
 - **Remote sync.** Everything lives in AsyncStorage on the device. The store is
   the only thing that touches persistence, so a sync layer would slot in behind
   `expenseRepository` without the UI noticing.
+- **Custom categories and accounts.** Both catalogs are constants in
+  `src/data/catalog.ts`.
