@@ -267,6 +267,18 @@ private fun BoxWithConstraintsScope.UI(
     val titleFocus = FocusRequester()
     val scrollState = rememberScrollState()
 
+    // Adding a transaction always begins with the amount, and the amount is
+    // always typed. Opening the keypad here is what makes a widget tap land on
+    // the number pad rather than on a form waiting to be tapped again; the
+    // existing amount -> category -> title chain carries it the rest of the way.
+    // Only for a genuinely new entry: opening it over an existing transaction
+    // would hijack a screen the user opened to read.
+    LaunchedEffect(screen.initialTransactionId) {
+        if (screen.initialTransactionId == null && shouldFocusAmount(amount)) {
+            amountModalShown = true
+        }
+    }
+
     // This is to scroll the column to the customExchangeCard composable when it is shown
     var customExchangeRatePosition by remember { mutableFloatStateOf(0F) }
     LaunchedEffect(key1 = customExchangeRateState.showCard) {
