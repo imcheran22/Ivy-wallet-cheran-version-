@@ -123,7 +123,9 @@ android {
 
             signingConfig = signingConfigs.getByName("debug")
 
-            applicationIdSuffix = ".debug"
+            // No applicationIdSuffix: google-services.json registers com.ivy.wallet
+            // and com.cheran.tracker, so a ".debug" suffix produces an app id with
+            // no Firebase client and the build fails before it compiles anything.
             resValue("string", "app_name", "Ivy Wallet")
         }
     }
