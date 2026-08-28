@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,26 +32,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
-import com.ivy.legacy.Constants
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.IvyWalletPreview
 import com.ivy.legacy.ivyWalletCtx
 import com.ivy.legacy.utils.clickableNoIndication
 import com.ivy.legacy.utils.drawColoredShadow
 import com.ivy.legacy.utils.lerp
-import com.ivy.legacy.utils.openUrl
 import com.ivy.legacy.utils.springBounceSlow
 import com.ivy.design.utils.thenIf
 import com.ivy.legacy.utils.rememberInteractionSource
@@ -62,7 +55,6 @@ import com.ivy.onboarding.OnboardingState
 import com.ivy.ui.R
 import com.ivy.wallet.ui.theme.Gradient
 import com.ivy.wallet.ui.theme.Gray
-import com.ivy.wallet.ui.theme.Green
 import com.ivy.wallet.ui.theme.components.IvyIcon
 import kotlin.math.roundToInt
 
@@ -207,28 +199,6 @@ fun BoxWithConstraintsScope.OnboardingSplashLogin(
             )
         )
 
-        val uriHandler = LocalUriHandler.current
-        Text(
-            modifier = Modifier
-                .animateXCenterToLeft(
-                    ivyContext = ivyContext,
-                    percentTransition = percentTransition
-                )
-                .clickable {
-                    openUrl(
-                        uriHandler = uriHandler,
-                        url = Constants.URL_IVY_WALLET_REPO
-                    )
-                }
-                .padding(vertical = 8.dp)
-                .padding(end = 8.dp),
-            text = stringResource(R.string.opensource),
-            style = UI.typo.c.style(
-                color = Green,
-                fontWeight = FontWeight.Bold
-            )
-        )
-
         LoginSection(
             percentTransition = percentTransition,
             onSkip = onSkip
@@ -284,10 +254,6 @@ private fun LoginSection(
 
             Spacer(Modifier.weight(3f))
             Spacer(Modifier.height(16.dp))
-
-            PrivacyPolicyAndTC()
-
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -312,75 +278,6 @@ private fun LocalAccountExplanation() {
             color = Gray,
             fontWeight = FontWeight.Medium
         )
-    )
-}
-
-@Composable
-private fun PrivacyPolicyAndTC() {
-    val terms = stringResource(R.string.terms_conditions)
-    val privacy = stringResource(R.string.privacy_policy)
-    val text = stringResource(R.string.by_signing_in, terms, privacy)
-
-    val tcStart = text.indexOf(terms)
-    val tcEnd = tcStart + terms.length
-
-    val privacyStart = text.indexOf(privacy)
-    val privacyEnd = privacyStart + privacy.length
-
-    val annotatedString = buildAnnotatedString {
-        append(text)
-
-        addStringAnnotation(
-            tag = "URL",
-            annotation = Constants.URL_TC,
-            start = tcStart,
-            end = tcEnd
-        )
-
-        addStringAnnotation(
-            tag = "URL",
-            annotation = Constants.URL_PRIVACY_POLICY,
-            start = privacyStart,
-            end = privacyEnd
-        )
-
-        addStyle(
-            style = SpanStyle(
-                color = Green,
-                textDecoration = TextDecoration.Underline
-            ),
-            start = tcStart,
-            end = tcEnd
-        )
-
-        addStyle(
-            style = SpanStyle(
-                color = Green,
-                textDecoration = TextDecoration.Underline
-            ),
-            start = privacyStart,
-            end = privacyEnd
-        )
-    }
-
-    val uriHandler = LocalUriHandler.current
-    ClickableText(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp),
-        text = annotatedString,
-        style = UI.typo.c.style(
-            color = UI.colors.pureInverse,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center
-        ),
-        onClick = {
-            annotatedString
-                .getStringAnnotations("URL", it, it)
-                .forEach { stringAnnotation ->
-                    uriHandler.openUri(stringAnnotation.item)
-                }
-        }
     )
 }
 

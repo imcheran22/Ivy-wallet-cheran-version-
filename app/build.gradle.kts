@@ -16,7 +16,11 @@ android {
     compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.ivy.wallet"
+        // The app's own identity. google-services.json registers this id, so
+        // Firebase resolves against it. `namespace` stays com.ivy.wallet: that
+        // only decides where R is generated and renaming it would touch every
+        // module for no user-visible gain.
+        applicationId = "com.cheran.tracker"
         minSdk = libs.versions.min.sdk.get().toInt()
         targetSdk = libs.versions.compile.sdk.get().toInt()
         versionName = libs.versions.version.name.get()
@@ -65,7 +69,7 @@ android {
 
             signingConfig = signingConfigs.getByName("release")
 
-            resValue("string", "app_name", "Ivy Wallet")
+            resValue("string", "app_name", "Tracker")
 
             ndk {
                 debugSymbolLevel = "NONE"
@@ -81,8 +85,7 @@ android {
 
             signingConfig = signingConfigs.getByName("debug")
 
-            applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "Ivy Wallet Debug")
+            resValue("string", "app_name", "Tracker Debug")
         }
 
         create("local") {
@@ -101,7 +104,7 @@ android {
 
             signingConfig = signingConfigs.getByName("local")
 
-            resValue("string", "app_name", "Ivy Wallet")
+            resValue("string", "app_name", "Tracker")
 
             ndk {
                 debugSymbolLevel = "NONE"
@@ -123,10 +126,9 @@ android {
 
             signingConfig = signingConfigs.getByName("debug")
 
-            // No applicationIdSuffix: google-services.json registers com.ivy.wallet
-            // and com.cheran.tracker, so a ".debug" suffix produces an app id with
-            // no Firebase client and the build fails before it compiles anything.
-            resValue("string", "app_name", "Ivy Wallet")
+            // No applicationIdSuffix: a suffixed id has no Firebase client, and
+            // the Google Services task fails before anything compiles.
+            resValue("string", "app_name", "Tracker")
         }
     }
 
