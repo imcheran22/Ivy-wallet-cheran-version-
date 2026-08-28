@@ -75,14 +75,15 @@ jobs:
           test -n "$APK"
           BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$BUILD_TOOLS/apksigner" verify --print-certs "$APK"
-          mkdir -p ../dist
-          cp "$APK" "../dist/SyncSpend-v${{ github.run_number }}.apk"
-          ls -lh ../dist
+          mkdir -p dist
+          cp "$APK" "dist/SyncSpend-v${{ github.run_number }}.apk"
+          ls -lh dist
 
       - uses: actions/upload-artifact@v4
         with:
           name: syncspend-apk
-          path: dist/*.apk
+          # Repo-root relative: action inputs ignore working-directory.
+          path: syncspend/dist/*.apk
           if-no-files-found: error
 
       - name: Publish release
