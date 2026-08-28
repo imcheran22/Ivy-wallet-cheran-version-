@@ -1,4 +1,4 @@
-name: Ivy Wallet APK
+name: Tracker APK
 
 # Builds the sideloadable APK and attaches it to a GitHub Release, so it can be
 # installed straight from a phone. `demo` is the right build type for this: it
@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ivy-apk-${{ github.ref }}
+  group: tracker-apk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -62,12 +62,12 @@ jobs:
           APK=$(find app/build/outputs/apk/demo -name '*.apk' | head -1)
           test -n "$APK"
           mkdir -p dist
-          cp "$APK" "dist/IvyWallet-build${{ github.run_number }}.apk"
+          cp "$APK" "dist/Tracker-build${{ github.run_number }}.apk"
           ls -lh dist
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ivy-wallet-apk
+          name: tracker-apk
           path: dist/*.apk
           if-no-files-found: error
 
@@ -76,11 +76,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="ivy-build${{ github.run_number }}"
+          TAG="tracker-build${{ github.run_number }}"
           gh release create "$TAG" dist/*.apk \
-            --title "Ivy Wallet (build ${{ github.run_number }})" \
+            --title "Tracker (build ${{ github.run_number }})" \
             --target "${{ github.sha }}" \
-            --notes "Sideloadable build of Ivy Wallet.
+            --notes "Sideloadable build of Tracker.
 
           **Install:** download the \`.apk\` below, open it, and allow installs from your browser when Android asks.
 
