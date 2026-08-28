@@ -222,6 +222,7 @@ fun CashFlowInfo(
     expenseCount: Int,
     unsortedIncomeCount: Int,
     unsortedExpenseCount: Int,
+    spentToday: Double,
     hideBalance: Boolean,
     hideIncome: Boolean,
     onHiddenIncomeClick: () -> Unit,
@@ -272,6 +273,26 @@ fun CashFlowInfo(
             hideIncome = hideIncome,
             onHiddenIncomeClick = onHiddenIncomeClick
         )
+
+        // The period total answers "how am I doing this month". It does not
+        // answer "how much have I already spent today", which is the number a
+        // daily tracker is consulted for and the only one you cannot get by
+        // reading the list.
+        if (spentToday > 0.0 && !hideBalance) {
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                modifier = Modifier
+                    .padding(start = 24.dp)
+                    .testTag("home_spent_today"),
+                text = stringResource(
+                    R.string.spent_today,
+                    spentToday.format(currency),
+                    currency,
+                ),
+                style = UI.typo.nB2.style(color = Gray),
+            )
+        }
 
         val cashflow = monthlyIncome - monthlyExpenses
         if (cashflow != 0.0 && !hideBalance) {

@@ -96,6 +96,7 @@
     <string name="hi">Hi</string>
     <string name="hi_name">Hi %1$s</string>
     <string name="cashflow">Cashflow: %1$s%2$s %3$s</string>
+    <string name="spent_today">Spent today: %1$s %2$s</string>
     <string name="search_transactions">Search transactions...</string>
     <string name="ivy_wallet_open_source">Ivy Wallet is open-source</string>
     <string name="savings_goal">Savings goal</string>

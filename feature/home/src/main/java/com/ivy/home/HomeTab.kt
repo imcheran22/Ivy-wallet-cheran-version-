@@ -350,6 +350,15 @@ fun HomeLazyColumn(
             val expenseTransactions = periodTransactions.filter {
                 it.type == TransactionType.EXPENSE
             }
+            // Derived from the same history, in the user's own zone, so it
+            // agrees with the rows below it. Only meaningful while the selected
+            // period actually contains today.
+            val today = timeProvider.localDateNow()
+            val spentToday = with(timeConverter) {
+                expenseTransactions
+                    .filter { it.dateTime?.toLocalDateTime()?.toLocalDate() == today }
+                    .sumOf { it.amount.toDouble() }
+            }
 
             CashFlowInfo(
                 currency = baseData.baseCurrency,
@@ -364,6 +373,7 @@ fun HomeLazyColumn(
                 expenseCount = expenseTransactions.size,
                 unsortedIncomeCount = incomeTransactions.count { it.categoryId == null },
                 unsortedExpenseCount = expenseTransactions.count { it.categoryId == null },
+                spentToday = spentToday,
 
                 onOpenMoreMenu = onOpenMoreMenu,
                 onBalanceClick = onBalanceClick,
