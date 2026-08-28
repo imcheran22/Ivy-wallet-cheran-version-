@@ -45,6 +45,12 @@ jobs:
       - name: Test
         run: npm test
 
+      # Neither the typecheck nor the tests bundle anything, so a broken Babel
+      # or Metro setup survives both and only surfaces six minutes into Gradle.
+      # This runs the same bundle-and-Hermes step in well under a minute.
+      - name: Bundle the JS
+        run: npx expo export --platform android --clear --output-dir "$RUNNER_TEMP/export-check"
+
       # The native project is generated, never committed: it is entirely derived
       # from app.json and the installed packages, so checking it in only creates
       # a second source of truth to keep in sync.
