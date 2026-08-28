@@ -134,23 +134,4 @@ data object ExchangeRatesScreen : Screen {
         get() = true
 }
 
-/**
- * Battery monitoring: charge/discharge measurement, health and per-app drain.
- */
-data object BatteryScreen : Screen
-
-data object NotifMirrorScreen : Screen
-
-/**
- * The sorting queue: auto-imported transactions waiting to be told what they were for.
- */
-data object SmsInboxScreen : Screen
-
-/**
- * Dry run over the SMS already on the device - what the parser would extract, nothing written.
- */
-data object SmsDiagnosticScreen : Screen
-
-data object PartnerTransactionsScreen : Screen
-
 data object FeaturesScreen : Screen

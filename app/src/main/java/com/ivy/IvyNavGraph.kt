@@ -5,9 +5,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.runtime.Composable
 import com.ivy.balance.BalanceScreen
-import com.ivy.battery.ui.BatteryScreenImpl
-import com.ivy.notifmirror.ui.NotifMirrorScreenImpl
-import com.ivy.notifmirror.ui.PartnerTransactionsScreenImpl
 import com.ivy.budgets.BudgetScreen
 import com.ivy.categories.CategoriesScreen
 import com.ivy.exchangerates.ExchangeRatesScreen
@@ -18,9 +15,6 @@ import com.ivy.loans.loan.LoansScreen
 import com.ivy.loans.loandetails.LoanDetailsScreen
 import com.ivy.main.MainScreen
 import com.ivy.navigation.BalanceScreen
-import com.ivy.navigation.BatteryScreen
-import com.ivy.navigation.NotifMirrorScreen
-import com.ivy.navigation.PartnerTransactionsScreen
 import com.ivy.navigation.BudgetScreen
 import com.ivy.navigation.CSVScreen
 import com.ivy.navigation.CategoriesScreen
@@ -39,8 +33,6 @@ import com.ivy.navigation.ReportScreen
 import com.ivy.navigation.Screen
 import com.ivy.navigation.SearchScreen
 import com.ivy.navigation.SettingsScreen
-import com.ivy.navigation.SmsDiagnosticScreen
-import com.ivy.navigation.SmsInboxScreen
 import com.ivy.navigation.TransactionsScreen
 import com.ivy.onboarding.OnboardingScreen
 import com.ivy.piechart.PieChartStatisticScreen
@@ -49,8 +41,6 @@ import com.ivy.planned.list.PlannedPaymentsScreen
 import com.ivy.reports.ReportScreen
 import com.ivy.search.SearchScreen
 import com.ivy.settings.SettingsScreen
-import com.ivy.smsinbox.ui.SmsDiagnosticScreenImpl
-import com.ivy.smsinbox.ui.SmsInboxScreenImpl
 import com.ivy.transaction.EditTransactionScreen
 import com.ivy.transactions.TransactionsScreen
 
@@ -82,11 +72,6 @@ fun BoxWithConstraintsScope.IvyNavGraph(screen: Screen?) {
         is LoanDetailsScreen -> LoanDetailsScreen(screen = screen)
         is SearchScreen -> SearchScreen(screen = screen)
         is CSVScreen -> CSVScreen(screen = screen)
-        BatteryScreen -> BatteryScreenImpl()
-        NotifMirrorScreen -> NotifMirrorScreenImpl()
-        SmsInboxScreen -> SmsInboxScreenImpl()
-        SmsDiagnosticScreen -> SmsDiagnosticScreenImpl()
-        PartnerTransactionsScreen -> PartnerTransactionsScreenImpl()
         FeaturesScreen -> FeaturesScreenImpl()
     }
 }

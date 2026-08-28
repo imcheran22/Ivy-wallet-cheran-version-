@@ -5,7 +5,7 @@ package com.ivy.domain.sync
  * needing to depend on the `app` module, where the actual Worker lives.
  */
 interface CloudSyncTrigger {
-    /** Enqueues a one-off push, e.g. right after the user saves credentials or an SMS import. */
+    /** Enqueues a one-off push, e.g. right after the user saves credentials. */
     fun syncNow()
 
     /** (Re)schedules the periodic background sync. Safe to call repeatedly. */

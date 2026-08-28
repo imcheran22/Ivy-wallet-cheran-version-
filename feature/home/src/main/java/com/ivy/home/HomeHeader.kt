@@ -1,8 +1,5 @@
 package com.ivy.home
 
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.BatteryManager
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.Spring
@@ -23,13 +20,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,7 +49,6 @@ import com.ivy.legacy.utils.rememberInteractionSource
 import com.ivy.legacy.utils.rememberSwipeListenerState
 import com.ivy.legacy.utils.springBounce
 import com.ivy.legacy.utils.verticalSwipeListener
-import com.ivy.navigation.BatteryScreen
 import com.ivy.navigation.PieChartStatisticScreen
 import com.ivy.navigation.navigation
 import com.ivy.ui.R
@@ -68,7 +62,6 @@ import com.ivy.wallet.ui.theme.components.BalanceRowMini
 import com.ivy.wallet.ui.theme.components.IvyIcon
 import com.ivy.wallet.ui.theme.components.IvyOutlinedButton
 import com.ivy.wallet.ui.theme.wallet.AmountCurrencyB1
-import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
 
 @ExperimentalAnimationApi
@@ -189,10 +182,6 @@ private fun HeaderStickyRow(
             }
         }
 
-        BatteryPill()
-
-        Spacer(Modifier.width(8.dp))
-
         IvyOutlinedButton(
             modifier = Modifier.horizontalSwipeListener(
                 sensitivity = 75,
@@ -221,73 +210,6 @@ private fun HeaderStickyRow(
         Spacer(Modifier.width(40.dp)) // settings menu button spacer
     }
 }
-
-/**
- * Live battery indicator in the home header. Tapping it opens the built-in
- * battery monitor, so there's no reason to install a separate battery app.
- *
- * The level is read straight from the sticky `ACTION_BATTERY_CHANGED` broadcast
- * rather than through the battery feature module - the home screen shouldn't
- * have to depend on it just to draw a number.
- */
-@Composable
-private fun BatteryPill(
-    modifier: Modifier = Modifier,
-) {
-    val nav = navigation()
-    val level = rememberBatteryLevel()
-
-    Row(
-        modifier = modifier
-            .clip(UI.shapes.rFull)
-            .background(UI.colors.medium)
-            .clickable { nav.navigateTo(BatteryScreen) }
-            .padding(horizontal = 10.dp, vertical = 8.dp)
-            .testTag("home_battery_pill"),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IvyIcon(
-            modifier = Modifier.size(18.dp),
-            icon = R.drawable.ic_vue_main_battery_charging,
-            tint = UI.colors.pureInverse,
-            contentDescription = "Battery",
-        )
-
-        if (level != null) {
-            Spacer(Modifier.width(4.dp))
-
-            Text(
-                text = "$level",
-                style = UI.typo.c.style(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = UI.colors.pureInverse,
-                ),
-            )
-        }
-    }
-}
-
-@Composable
-private fun rememberBatteryLevel(): Int? {
-    val context = LocalContext.current
-    val level by produceState<Int?>(initialValue = null, context) {
-        while (true) {
-            value = runCatching {
-                val intent = context.registerReceiver(
-                    null,
-                    IntentFilter(Intent.ACTION_BATTERY_CHANGED),
-                )
-                val raw = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-                val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
-                if (raw >= 0 && scale > 0) raw * 100 / scale else null
-            }.getOrNull()
-            delay(BATTERY_POLL_MS)
-        }
-    }
-    return level
-}
-
-private const val BATTERY_POLL_MS = 30_000L
 
 @ExperimentalAnimationApi
 @Composable

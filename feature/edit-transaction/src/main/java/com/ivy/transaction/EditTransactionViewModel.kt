@@ -9,7 +9,6 @@ import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
-import com.ivy.base.CoupleTransactionSyncer
 import com.ivy.base.Toaster
 import com.ivy.base.legacy.SharedPrefs
 import com.ivy.base.legacy.Transaction
@@ -108,7 +107,6 @@ class EditTransactionViewModel @Inject constructor(
     private val timeConverter: TimeConverter,
     private val timeProvider: TimeProvider,
     private val dateTimePicker: DateTimePicker,
-    private val coupleTransactionSyncer: CoupleTransactionSyncer,
 ) : ComposeViewModel<EditTransactionViewState, EditTransactionViewEvent>() {
 
     private var transactionType by mutableStateOf(TransactionType.EXPENSE)
@@ -752,17 +750,6 @@ class EditTransactionViewModel @Inject constructor(
                 loadedTransaction().toDomain(transactionMapper)?.let {
                     transactionRepo.save(it)
                 }
-
-                coupleTransactionSyncer.syncTransaction(
-                    type = transactionType.name,
-                    amount = amount.toDouble(),
-                    title = title?.trim() ?: "",
-                    currency = currency,
-                    category = category?.name?.value ?: "",
-                    accountName = account?.name ?: "",
-                    dateTimeMillis = loadedTransaction().dateTime?.toEpochMilli()
-                        ?: System.currentTimeMillis(),
-                )
 
                 refreshWidget(WalletBalanceWidgetReceiver::class.java)
             }

@@ -20,8 +20,6 @@ sealed interface SettingsEvent {
     data object DeleteAllUserData : SettingsEvent
     data object SwitchLanguage : SettingsEvent
 
-    data class SetSmsAutoImportEnabled(val enabled: Boolean) : SettingsEvent
-    data object CatchUpOnSms : SettingsEvent
     data class SetCloudSyncEnabled(val enabled: Boolean) : SettingsEvent
     data class SetCloudSyncCredentials(val url: String, val anonKey: String) : SettingsEvent
     data object TriggerCloudSyncNow : SettingsEvent

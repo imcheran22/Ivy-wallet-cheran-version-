@@ -158,7 +158,6 @@ android {
 
 dependencies {
     implementation(projects.feature.balance)
-    implementation(projects.feature.battery)
     implementation(projects.feature.budgets)
     implementation(projects.feature.categories)
     implementation(projects.feature.editTransaction)
@@ -168,14 +167,12 @@ dependencies {
     implementation(projects.feature.importData)
     implementation(projects.feature.loans)
     implementation(projects.feature.main)
-    implementation(projects.feature.notifMirror)
     implementation(projects.feature.onboarding)
     implementation(projects.feature.piechart)
     implementation(projects.feature.plannedPayments)
     implementation(projects.feature.reports)
     implementation(projects.feature.search)
     implementation(projects.feature.settings)
-    implementation(projects.feature.smsInbox)
     implementation(projects.feature.transactions)
     implementation(projects.shared.base)
     implementation(projects.shared.data.core)

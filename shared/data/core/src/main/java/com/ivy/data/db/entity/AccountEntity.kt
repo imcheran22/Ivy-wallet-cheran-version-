@@ -26,8 +26,8 @@ data class AccountEntity(
     @SerialName("includeInBalance")
     val includeInBalance: Boolean = true,
 
-    // Last digits of the linked bank account/card number (e.g. "5555"), used to match
-    // incoming bank SMS notifications to this account for auto-import.
+    // Retired: last digits of the linked bank account/card number (e.g. "5555"). The column
+    // stays so existing v131 databases keep opening without another migration.
     @SerialName("bankAccountSuffix")
     val bankAccountSuffix: String? = null,
 
