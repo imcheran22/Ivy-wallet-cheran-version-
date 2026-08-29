@@ -11,5 +11,9 @@ sealed interface SharedPotEvent {
     data object DismissLimit : SharedPotEvent
     data class SetLimit(val limit: Double) : SharedPotEvent
 
+    data object ConfirmRemove : SharedPotEvent
+    data object DismissRemove : SharedPotEvent
+    data object RemovePot : SharedPotEvent
+
     data object Refresh : SharedPotEvent
 }

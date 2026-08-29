@@ -22,6 +22,7 @@ data class SharedPotState(
     val accountOptions: ImmutableList<AccountOption> = persistentListOf(),
     val pickingAccount: Boolean = false,
     val editingLimit: Boolean = false,
+    val confirmingRemove: Boolean = false,
 ) {
     val left: Double get() = limit - spent
 

@@ -59,6 +59,10 @@ class SharedPotViewModel @Inject constructor(
             SharedPotEvent.DismissLimit -> state = state.copy(editingLimit = false)
             is SharedPotEvent.SetLimit -> setLimit(event.limit)
 
+            SharedPotEvent.ConfirmRemove -> state = state.copy(confirmingRemove = true)
+            SharedPotEvent.DismissRemove -> state = state.copy(confirmingRemove = false)
+            SharedPotEvent.RemovePot -> removePot()
+
             SharedPotEvent.Refresh -> viewModelScope.launch { load() }
         }
     }
@@ -76,6 +80,18 @@ class SharedPotViewModel @Inject constructor(
         if (limit <= 0.0) return
         viewModelScope.launch {
             settings.setMonthlyLimit(limit)
+            load()
+        }
+    }
+
+    /**
+     * Forgets the pairing and the limit. Nothing about the money is touched - the account and
+     * its transactions are ordinary records that the rest of the app owns.
+     */
+    private fun removePot() {
+        viewModelScope.launch {
+            settings.clear()
+            state = SharedPotState(loading = false, confirmingRemove = false)
             load()
         }
     }
@@ -121,7 +137,11 @@ class SharedPotViewModel @Inject constructor(
             // Today counts as a day you can still spend on, so a limit reached on the last of
             // the month divides by one rather than by zero.
             daysLeft = today.lengthOfMonth() - today.dayOfMonth + 1,
-            recent = month.sortedByDescending { it.time }
+            // Spending only. A pot exists to answer "how much of the limit is left", and a
+            // salary credit landing in the same account dwarfs every line that question is
+            // about. The money-in total above still accounts for it.
+            recent = month.filter { it.spentFrom(pot.id) > 0.0 }
+                .sortedByDescending { it.time }
                 .take(RECENT_LIMIT)
                 .mapNotNull { it.toEntry(pot.id) }
                 .toImmutableList(),
