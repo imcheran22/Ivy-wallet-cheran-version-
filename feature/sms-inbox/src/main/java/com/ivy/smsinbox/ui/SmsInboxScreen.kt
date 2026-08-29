@@ -1,6 +1,7 @@
 package com.ivy.smsinbox.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -205,6 +207,10 @@ private fun SortingCard(
                     .verticalScroll(rememberScrollState()),
             ) {
                 Spacer(Modifier.height(12.dp))
+                card.originalSms?.let { original ->
+                    OriginalMessage(text = original)
+                    Spacer(Modifier.height(12.dp))
+                }
                 if (card.suggestionReason != null && selected == card.suggestedCategoryId?.value) {
                     SuggestionReason(reason = card.suggestionReason)
                     Spacer(Modifier.height(8.dp))
@@ -276,9 +282,9 @@ private fun CardHeader(card: SmsInboxCard) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (card.timesInQueue > 1) {
+            if (card.timesInQueue > 1 && card.payee != null) {
                 Text(
-                    text = "${card.timesInQueue} payments to this payee waiting",
+                    text = "${card.timesInQueue} more to ${card.payee} waiting",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
@@ -301,6 +307,43 @@ private fun CardHeader(card: SmsInboxCard) {
         )
     }
 }
+
+/**
+ * The bank's original text.
+ *
+ * A payee the parser could not name leaves nothing on the card to recognise - an amount and a
+ * timestamp are not a memory. The message almost always is: it carries the merchant's own
+ * spelling, the card used, or a reference that can be searched. Showing it is the difference
+ * between sorting the queue and guessing at it.
+ */
+@Composable
+private fun OriginalMessage(text: String) {
+    var expanded by rememberSaveable(text) { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable { expanded = !expanded }
+            .padding(12.dp),
+    ) {
+        Text(
+            text = "The bank's message",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = if (expanded) Int.MAX_VALUE else COLLAPSED_SMS_LINES,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+private const val COLLAPSED_SMS_LINES = 3
 
 @Composable
 private fun SuggestionReason(reason: String) {

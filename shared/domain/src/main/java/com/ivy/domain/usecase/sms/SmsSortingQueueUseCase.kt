@@ -36,6 +36,16 @@ data class SmsInboxItem(
     val suggestedCategoryId: CategoryId?,
     /** Why [suggestedCategoryId] was pre-selected, in words the user can overrule. */
     val suggestionReason: String?,
+    /**
+     * The bank's own message, when it is still on the phone.
+     *
+     * An alert that named nobody cannot be sorted from a name, an amount and a timestamp -
+     * there is nothing there to recognise. The original text nearly always has something that
+     * is: the merchant's spelling of itself, the card's last digits, a reference to search. It
+     * is not stored anywhere; the inbox is re-read and matched back by the same dedupe key the
+     * import wrote, so this costs one query rather than a schema change.
+     */
+    val originalSms: String?,
 )
 
 data class SmsSortingQueue(
@@ -60,6 +70,7 @@ class SmsSortingQueueUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val payeeMemory: PayeeMemory,
+    private val deviceSmsReader: DeviceSmsReader,
     private val dispatchersProvider: DispatchersProvider,
 ) {
 
@@ -67,12 +78,19 @@ class SmsSortingQueueUseCase @Inject constructor(
         val pending = pendingTransactions()
         val categories = categoryRepository.findAll()
 
+        // Only named payees are counted. Every alert that named nobody used to fall into
+        // one bucket, so a card for an anonymous QR payment claimed "40 payments to this
+        // payee waiting" - forty unrelated payments that share nothing but the absence of a
+        // name, sorted to the very top of a queue they are the hardest items in.
         val payeeCounts = pending
-            .groupingBy { PayeeMemory.normalize(it.title?.value) ?: UNNAMED_KEY }
+            .mapNotNull { PayeeMemory.normalize(it.title?.value) }
+            .groupingBy { it }
             .eachCount()
 
+        val originals = originalMessagesByKey()
+
         val items = pending
-            .map { transaction -> toInboxItem(transaction, categories, payeeCounts) }
+            .map { transaction -> toInboxItem(transaction, categories, payeeCounts, originals) }
             // Naming somewhere you've been to twelve times sorts twelve transactions at once,
             // so the boring part shrinks fastest when the most frequent payee comes first.
             .sortedWith(compareByDescending<SmsInboxItem> { it.timesInQueue }.thenByDescending { it.time })
@@ -147,12 +165,27 @@ class SmsSortingQueueUseCase @Inject constructor(
         ).filter { it.category == null && SmsTransactionMarker.isAutoImported(it.description?.value) }
     }
 
+    /**
+     * Re-derives every message's dedupe key so a queued transaction can be matched back to the
+     * text it came from. Silent on failure: no SMS permission, or a message since deleted,
+     * simply means a card shows without its original, which is how the queue behaved before.
+     */
+    private suspend fun originalMessagesByKey(): Map<String, String> = runCatching {
+        deviceSmsReader.readRecent(window = QUEUE_LOOKBACK, limit = ORIGINALS_LIMIT)
+            .filter { BankSmsParser.looksLikeMoneyAlert(it.body) }
+            .mapNotNull { sms -> BankSmsParser.parse(sms.body)?.dedupeKey?.let { it to sms.body } }
+            .toMap()
+    }.getOrDefault(emptyMap())
+
     private fun toInboxItem(
         transaction: Transaction,
         categories: List<Category>,
         payeeCounts: Map<String, Int>,
+        originals: Map<String, String>,
     ): SmsInboxItem {
-        val payee = transaction.title?.value
+        // Run through the same tidy-up the transaction list uses, so the 200 rows captured
+        // before the naming improved read as "Rapido" here rather than "rapido522347.rzp".
+        val payee = BankSmsParser.readablePayee(transaction.title?.value)
         val type = when (transaction) {
             is Income -> TransactionType.INCOME
             is Expense -> TransactionType.EXPENSE
@@ -175,9 +208,11 @@ class SmsSortingQueueUseCase @Inject constructor(
             assetCode = transaction.getFromValue().asset.code,
             type = type,
             time = transaction.time,
-            timesInQueue = payeeCounts[PayeeMemory.normalize(payee) ?: UNNAMED_KEY] ?: 1,
+            timesInQueue = PayeeMemory.normalize(payee)?.let { payeeCounts[it] } ?: 1,
             suggestedCategoryId = suggested?.id,
             suggestionReason = guess?.reason?.takeIf { suggested != null },
+            originalSms = SmsTransactionMarker.dedupeKeyOf(transaction.description?.value)
+                ?.let { originals[it] },
         )
     }
 
@@ -188,10 +223,10 @@ class SmsSortingQueueUseCase @Inject constructor(
     }
 
     companion object {
-        private const val UNNAMED_KEY = "__unnamed__"
-
         @Suppress("MagicNumber")
         private val DEFAULT_CATEGORY_COLOR = 0xFF9E9E9E.toInt()
+
+        private const val ORIGINALS_LIMIT = 2000
 
         private val QUEUE_LOOKBACK: Duration = Duration.ofDays(180)
         private val QUEUE_LOOKAHEAD: Duration = Duration.ofDays(1)

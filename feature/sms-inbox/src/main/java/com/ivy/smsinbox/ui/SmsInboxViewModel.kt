@@ -112,6 +112,7 @@ class SmsInboxViewModel @Inject constructor(
         timesInQueue = timesInQueue,
         suggestedCategoryId = suggestedCategoryId,
         suggestionReason = suggestionReason,
+        originalSms = originalSms,
     )
 
     private suspend fun moneyLabel(amount: Double, assetCode: String): String {

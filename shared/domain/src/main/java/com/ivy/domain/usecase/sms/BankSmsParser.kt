@@ -373,6 +373,12 @@ object BankSmsParser {
      * this in the UI instead would hide broken data behind an ellipsis rather than fix it.
      */
     private fun capPayee(raw: String): String? {
+        // A UPI handle or a NEFT beneficiary line resolves to a real name here, so the queue
+        // groups by the merchant rather than by the terminal that happened to take the money.
+        PayeeNames.readable(raw)?.let { named ->
+            if (named != raw) return named
+        }
+
         var value = raw.split(' ').filter { it.isNotBlank() }
             .take(MAX_PAYEE_WORDS)
             .mapNotNull(::simplifyMashedToken)

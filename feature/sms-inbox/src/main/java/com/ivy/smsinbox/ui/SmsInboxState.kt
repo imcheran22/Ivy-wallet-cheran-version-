@@ -28,6 +28,8 @@ data class SmsInboxCard(
     val timesInQueue: Int,
     val suggestedCategoryId: CategoryId?,
     val suggestionReason: String?,
+    /** The bank's own words, shown when the parsed name is not enough to decide from. */
+    val originalSms: String?,
 )
 
 @Immutable
