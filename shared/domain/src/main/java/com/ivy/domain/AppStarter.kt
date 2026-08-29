@@ -30,4 +30,7 @@ interface AppStarter {
 
     /** Opens an existing transaction in the full editor - what a widget row taps through to. */
     fun getEditTransactionIntent(transactionId: UUID, type: TransactionType): Intent
+
+    /** Opens the queue of transactions still waiting for a category. */
+    fun getSortingQueueIntent(): Intent
 }

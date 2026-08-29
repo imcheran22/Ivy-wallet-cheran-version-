@@ -32,6 +32,19 @@ object DatastoreKeys {
     val CLOUD_SYNC_OWNER_ID = stringPreferencesKey("cloud_sync_owner_id")
     val CLOUD_SYNC_LAST_SYNCED_EPOCH_MS = longPreferencesKey("cloud_sync_last_synced_epoch_ms")
 
+    // Quick add
+    val QUICK_ADD_NOTIFICATION_ENABLED = booleanPreferencesKey("quick_add_notification_enabled")
+    val DAILY_SUMMARY_ENABLED = booleanPreferencesKey("daily_summary_enabled")
+
+    // Privacy
+    val SECURE_SCREEN_ENABLED = booleanPreferencesKey("secure_screen_enabled")
+    val HIDE_AMOUNTS = booleanPreferencesKey("hide_amounts")
+
+    // Backups
+    val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
+    val AUTO_BACKUP_LAST_RUN_EPOCH_MS = longPreferencesKey("auto_backup_last_run_epoch_ms")
+    val AUTO_BACKUP_LAST_RESULT = stringPreferencesKey("auto_backup_last_result")
+
     fun ivyFeature(key: String): Preferences.Key<Boolean> {
         return booleanPreferencesKey("feature_$key")
     }

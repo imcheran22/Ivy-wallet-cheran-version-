@@ -18,9 +18,12 @@ import com.ivy.navigation.EditTransactionScreen
 import com.ivy.navigation.MainScreen
 import com.ivy.navigation.Navigation
 import com.ivy.navigation.OnboardingScreen
+import com.ivy.navigation.SmsInboxScreen
 import com.ivy.ui.R
 import com.ivy.wallet.domain.deprecated.logic.notification.TransactionReminderLogic
 import com.ivy.wallet.migrations.MigrationsManager
+import com.ivy.wallet.quickadd.notification.DailySummaryScheduler
+import com.ivy.wallet.quickadd.notification.QuickAddNotificationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -43,11 +46,15 @@ class RootViewModel @Inject constructor(
     private val transactionReminderLogic: TransactionReminderLogic,
     private val migrationsManager: MigrationsManager,
     private val smsCatchUpUseCase: SmsCatchUpUseCase,
+    private val quickAddNotificationManager: QuickAddNotificationManager,
+    private val dailySummaryScheduler: DailySummaryScheduler,
 ) : ViewModel() {
 
     companion object {
         const val EXTRA_ADD_TRANSACTION_TYPE = "add_transaction_type_extra"
         const val EXTRA_EDIT_TRANSACTION_ID = "edit_transaction_id_extra"
+        const val EXTRA_OPEN_SCREEN = "open_screen_extra"
+        const val SCREEN_SORTING_QUEUE = "sorting_queue"
 
         const val USER_INACTIVITY_TIME_LIMIT = 60 // Time in seconds
     }
@@ -95,6 +102,14 @@ class RootViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            // Both are user-controlled and cheap to re-assert; doing it on every open is what
+            // keeps them alive across reboots, force-stops and OEM battery managers.
+            runCatching { quickAddNotificationManager.refresh() }
+                .onFailure { Timber.w(it, "Failed to refresh the quick-add notification") }
+            dailySummaryScheduler.schedule()
+        }
+
+        viewModelScope.launch {
             // The SMS broadcast receiver is the fast path, not the guarantee - several OEM
             // builds stop delivering it without telling the app. Sweeping the inbox on every
             // open is what makes capture eventually correct; the importer dedupes, so a sweep
@@ -118,6 +133,11 @@ class RootViewModel @Inject constructor(
                 ?: TransactionType.valueOf(intent.getStringExtra(EXTRA_ADD_TRANSACTION_TYPE) ?: "")
         } catch (e: IllegalArgumentException) {
             null
+        }
+
+        if (intent.getStringExtra(EXTRA_OPEN_SCREEN) == SCREEN_SORTING_QUEUE) {
+            nav.navigateTo(SmsInboxScreen)
+            return true
         }
 
         // A widget row taps straight into the transaction it shows, rather than dropping the

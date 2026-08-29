@@ -57,6 +57,7 @@ import com.ivy.legacy.utils.drawColoredShadow
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
 import com.ivy.navigation.ImportScreen
+import com.ivy.navigation.QuickAddSettingsScreen
 import com.ivy.navigation.SmsDiagnosticScreen
 import com.ivy.navigation.SmsInboxScreen
 import com.ivy.navigation.navigation
@@ -426,6 +427,20 @@ private fun BoxWithConstraintsScope.UI(
 
             CustomFeatures(
                 onClick = { nav.navigateTo(FeaturesScreen) }
+            )
+        }
+
+        item {
+            SettingsSectionDivider(text = "Quick add & insights")
+
+            Spacer(Modifier.height(16.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_rocket_m,
+                text = stringResource(R.string.quick_add),
+                description = "One-tap presets for what you buy over and over, plus the " +
+                    "notification that logs them without unlocking.",
+                onClick = { nav.navigateTo(QuickAddSettingsScreen) }
             )
         }
 

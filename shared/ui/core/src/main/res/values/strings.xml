@@ -521,4 +521,13 @@
         <item quantity="one">%1$d day left</item>
         <item quantity="other">%1$d days left</item>
     </plurals>
+    <string name="daily_summary_title">%1$s spent today across %2$d transactions</string>
+    <string name="daily_summary_all_sorted">Everything today has a category. Nothing to sort.</string>
+    <plurals name="daily_summary_uncategorized">
+        <item quantity="one">%1$d still needs a category. Tap to sort it.</item>
+        <item quantity="other">%1$d still need a category. Tap to sort them.</item>
+    </plurals>
+    <string name="amount">Amount</string>
+    <string name="category">Category</string>
+    <string name="cancel">Cancel</string>
 </resources>

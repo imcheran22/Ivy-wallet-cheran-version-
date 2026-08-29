@@ -57,6 +57,11 @@ class IvyAppStarter @Inject constructor(
             applyWidgetStartFlags()
         }
 
+    override fun getSortingQueueIntent(): Intent = getRootIntent().apply {
+        putExtra(RootViewModel.EXTRA_OPEN_SCREEN, RootViewModel.SCREEN_SORTING_QUEUE)
+        applyWidgetStartFlags()
+    }
+
     private fun Intent.applyWidgetStartFlags() {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }

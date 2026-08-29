@@ -154,3 +154,8 @@ data object SmsDiagnosticScreen : Screen
 data object PartnerTransactionsScreen : Screen
 
 data object FeaturesScreen : Screen
+
+/**
+ * Quick-add presets and the one-tap notification.
+ */
+data object QuickAddSettingsScreen : Screen

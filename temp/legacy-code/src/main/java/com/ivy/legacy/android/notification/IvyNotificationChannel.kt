@@ -20,6 +20,26 @@ enum class IvyNotificationChannel(
         description = "Reminding you to record your transactions on a daily basis.",
         importance = NotificationManager.IMPORTANCE_HIGH,
         bypassDnd = false
+    ),
+
+    /**
+     * The always-there quick-add notification. Deliberately the lowest importance there is:
+     * it's a button the user chose to keep in their shade, not something with news.
+     */
+    QUICK_ADD(
+        channelId = "quick_add",
+        channelName = "Quick add",
+        description = "A silent notification for logging a transaction without unlocking.",
+        importance = NotificationManager.IMPORTANCE_MIN,
+        bypassDnd = false
+    ),
+
+    DAILY_SUMMARY(
+        channelId = "daily_summary",
+        channelName = "Evening summary",
+        description = "A nightly recap of what you spent and what still needs a category.",
+        importance = NotificationManager.IMPORTANCE_DEFAULT,
+        bypassDnd = false
     );
 
     @SuppressLint("WrongConstant")
@@ -34,8 +54,10 @@ enum class IvyNotificationChannel(
         )
         channel.description = description
         channel.lightColor = colorPurple
-        channel.enableLights(true)
-        channel.enableVibration(true)
+        // A low-importance channel that still blinks and buzzes isn't low-importance.
+        val noisy = importance >= NotificationManager.IMPORTANCE_DEFAULT
+        channel.enableLights(noisy)
+        channel.enableVibration(noisy)
         channel.setBypassDnd(false)
         return channel
     }

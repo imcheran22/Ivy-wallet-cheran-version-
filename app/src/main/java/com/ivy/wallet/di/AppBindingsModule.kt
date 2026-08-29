@@ -1,10 +1,12 @@
 package com.ivy.wallet.di
 
 import com.ivy.domain.AppStarter
+import com.ivy.domain.NotificationController
 import com.ivy.domain.WidgetRefresher
 import com.ivy.domain.sync.CloudSyncTrigger
 import com.ivy.wallet.IvyAppStarter
 import com.ivy.wallet.sync.CloudSyncSchedulerImpl
+import com.ivy.wallet.quickadd.notification.IvyNotificationController
 import com.ivy.wallet.widget.IvyWidgetRefresher
 import dagger.Binds
 import dagger.Module
@@ -22,4 +24,9 @@ abstract class AppBindingsModule {
 
     @Binds
     abstract fun widgetRefresher(refresher: IvyWidgetRefresher): WidgetRefresher
+
+    @Binds
+    abstract fun notificationController(
+        controller: IvyNotificationController
+    ): NotificationController
 }
