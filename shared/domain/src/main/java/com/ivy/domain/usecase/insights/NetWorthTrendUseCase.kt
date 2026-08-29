@@ -1,7 +1,7 @@
 package com.ivy.domain.usecase.insights
 
 import com.ivy.base.model.LoanRecordType
-import com.ivy.base.model.LoanType
+import com.ivy.data.model.LoanType
 import com.ivy.base.threading.DispatchersProvider
 import com.ivy.base.time.TimeConverter
 import com.ivy.data.db.dao.read.LoanDao

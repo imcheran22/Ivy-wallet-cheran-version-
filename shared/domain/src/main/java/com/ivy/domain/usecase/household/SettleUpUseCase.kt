@@ -1,6 +1,6 @@
 package com.ivy.domain.usecase.household
 
-import com.ivy.base.model.LoanType
+import com.ivy.data.model.LoanType
 import com.ivy.base.threading.DispatchersProvider
 import com.ivy.base.time.TimeProvider
 import com.ivy.data.db.dao.read.LoanDao
