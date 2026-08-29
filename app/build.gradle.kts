@@ -166,6 +166,7 @@ dependencies {
     implementation(projects.feature.features)
     implementation(projects.feature.home)
     implementation(projects.feature.importData)
+    implementation(projects.feature.insights)
     implementation(projects.feature.loans)
     implementation(projects.feature.main)
     implementation(projects.feature.notifMirror)

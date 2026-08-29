@@ -57,6 +57,7 @@ import com.ivy.legacy.utils.drawColoredShadow
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
 import com.ivy.navigation.ImportScreen
+import com.ivy.navigation.InsightsScreen
 import com.ivy.navigation.QuickAddSettingsScreen
 import com.ivy.navigation.SmsDiagnosticScreen
 import com.ivy.navigation.SmsInboxScreen
@@ -441,6 +442,16 @@ private fun BoxWithConstraintsScope.UI(
                 description = "One-tap presets for what you buy over and over, plus the " +
                     "notification that logs them without unlocking.",
                 onClick = { nav.navigateTo(QuickAddSettingsScreen) }
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_stats_m,
+                text = stringResource(R.string.insights),
+                description = "Where this month's money went compared with last, and whether " +
+                    "your net worth is actually going up.",
+                onClick = { nav.navigateTo(InsightsScreen) }
             )
         }
 

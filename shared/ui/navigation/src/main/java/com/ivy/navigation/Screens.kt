@@ -159,3 +159,8 @@ data object FeaturesScreen : Screen
  * Quick-add presets and the one-tap notification.
  */
 data object QuickAddSettingsScreen : Screen
+
+/**
+ * Month-over-month spending and net worth over time.
+ */
+data object InsightsScreen : Screen

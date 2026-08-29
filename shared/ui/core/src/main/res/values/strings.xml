@@ -536,4 +536,16 @@
     <string name="carried_over">+%1$s %2$s carried over</string>
     <string name="over_budget_warning">This puts %1$s %2$s %3$s over budget</string>
     <string name="budget_left_warning">%1$s %2$s left in %3$s after this</string>
+    <!-- Insights -->
+    <string name="insights">Insights</string>
+    <string name="net_worth">Net worth</string>
+    <string name="over_the_last_year">over the last year</string>
+    <string name="this_month_vs_last">This month vs last</string>
+    <string name="vs_last_month">vs last month</string>
+    <string name="last_month">last month</string>
+    <string name="saved">Saved</string>
+    <string name="by_category">By category</string>
+    <string name="top_payees">Top payees</string>
+    <string name="new_this_month">new</string>
+    <string name="times_this_month">%1$d times this month</string>
 </resources>
