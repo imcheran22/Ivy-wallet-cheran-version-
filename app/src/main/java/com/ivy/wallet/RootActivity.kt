@@ -37,6 +37,7 @@ import com.ivy.design.api.IvyDesign
 import com.ivy.design.api.IvyUI
 import com.ivy.design.system.IvyMaterial3Theme
 import com.ivy.domain.RootScreen
+import com.ivy.domain.WidgetRefresher
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.appDesign
 import com.ivy.legacy.utils.activityForResultLauncher
@@ -50,9 +51,6 @@ import com.ivy.ui.time.impl.DateTimePicker
 import com.ivy.wallet.security.SecurityManager
 import com.ivy.wallet.security.SecurityWarningScreen
 import com.ivy.wallet.ui.applocked.AppLockedScreen
-import com.ivy.widget.balance.WalletBalanceWidgetReceiver
-import com.ivy.widget.transaction.AddTransactionWidget
-import com.ivy.widget.transaction.AddTransactionWidgetCompact
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
 import java.time.LocalTime
@@ -81,6 +79,9 @@ class RootActivity : AppCompatActivity(), RootScreen {
 
     @Inject
     lateinit var securityManager: SecurityManager
+
+    @Inject
+    lateinit var widgetRefresher: WidgetRefresher
 
     private lateinit var createFileLauncher: ActivityResultLauncher<String>
     private lateinit var onFileCreated: (fileUri: Uri) -> Unit
@@ -177,9 +178,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setupDatePicker()
         setupTimePicker()
-        AddTransactionWidget.updateBroadcast(this)
-        AddTransactionWidgetCompact.updateBroadcast(this)
-        WalletBalanceWidgetReceiver.updateBroadcast(this)
+        widgetRefresher.refreshAll()
     }
 
     private companion object {

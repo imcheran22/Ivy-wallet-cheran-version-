@@ -10,4 +10,18 @@
         <item name="android:colorControlActivated">@color/ivy</item>
     </style>
 
+    <!-- The quick-add sheet floats over whatever the user was looking at: no window
+         background, no dim of its own (the sheet draws its own scrim), no title. -->
+    <style name="QuickAddTheme" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
+    </style>
+
 </resources>

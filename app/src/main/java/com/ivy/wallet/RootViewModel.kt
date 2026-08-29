@@ -29,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
@@ -46,6 +47,7 @@ class RootViewModel @Inject constructor(
 
     companion object {
         const val EXTRA_ADD_TRANSACTION_TYPE = "add_transaction_type_extra"
+        const val EXTRA_EDIT_TRANSACTION_ID = "edit_transaction_id_extra"
 
         const val USER_INACTIVITY_TIME_LIMIT = 60 // Time in seconds
     }
@@ -116,6 +118,22 @@ class RootViewModel @Inject constructor(
                 ?: TransactionType.valueOf(intent.getStringExtra(EXTRA_ADD_TRANSACTION_TYPE) ?: "")
         } catch (e: IllegalArgumentException) {
             null
+        }
+
+        // A widget row taps straight into the transaction it shows, rather than dropping the
+        // user on the home screen to go and find it again.
+        val editTrnId = intent.getStringExtra(EXTRA_EDIT_TRANSACTION_ID)
+            ?.let { runCatching { UUID.fromString(it) }.getOrNull() }
+
+        if (editTrnId != null) {
+            nav.navigateTo(
+                EditTransactionScreen(
+                    initialTransactionId = editTrnId,
+                    type = addTrnType ?: TransactionType.EXPENSE
+                )
+            )
+
+            return true
         }
 
         if (addTrnType != null) {

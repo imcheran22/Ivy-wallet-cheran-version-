@@ -495,4 +495,30 @@
     <string name="bill_paid">Your bill for %1$s %2$s has been paid</string>
     <string name="language">Language</string>
     <string name="advanced_features">Advanced features</string>
+    <!-- Quick add -->
+    <string name="quick_add">Quick add</string>
+    <string name="more_options">More options</string>
+    <string name="undo">Undo</string>
+    <string name="open_app">Open app</string>
+    <string name="saved_amount">Saved %1$s</string>
+    <string name="quick_add_no_accounts">Create an account first - a transaction has to land somewhere.</string>
+    <string name="quick_add_presets">Quick-add presets</string>
+    <string name="quick_add_presets_description">One-tap amounts for the things you buy over and over. They show up on the widget, the notification and the quick-add sheet.</string>
+    <string name="add_preset">Add preset</string>
+    <string name="edit_preset">Edit preset</string>
+    <string name="preset_label">Label</string>
+    <string name="no_presets_yet">No presets yet</string>
+    <string name="quick_add_notification">Quick-add notification</string>
+    <string name="quick_add_notification_description">Keeps a silent notification in your shade so you can log a transaction without unlocking.</string>
+    <string name="daily_summary_notification">Evening summary</string>
+    <string name="daily_summary_notification_description">A nightly recap of what you spent and what still needs a category.</string>
+    <string name="quick_add_keypad">Quick add keypad</string>
+    <string name="left_to_spend">Left to spend</string>
+    <string name="recent_transactions">Recent transactions</string>
+    <string name="no_budgets_yet_widget">No budgets yet. Set one and this shows what\'s left.</string>
+    <string name="safe_to_spend_today">%1$s a day</string>
+    <plurals name="days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
 </resources>

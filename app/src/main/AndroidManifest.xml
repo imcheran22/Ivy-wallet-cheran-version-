@@ -55,6 +55,18 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
+        <!-- Floating quick-add sheet. Own task affinity + excluded from recents so it
+             behaves like an overlay on the launcher rather than "the app opened". -->
+        <activity
+            android:name=".quickadd.QuickAddActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:taskAffinity="com.ivy.wallet.quickadd"
+            android:theme="@style/QuickAddTheme"
+            android:windowSoftInputMode="adjustResize|stateAlwaysHidden" />
+
         <!-- It fixes HiltWorker injection for newer WorkManager versions -->
         <provider
             android:name="androidx.startup.InitializationProvider"
@@ -84,6 +96,34 @@
         </receiver>
 
         <receiver
+            android:name="com.ivy.widget.quickadd.QuickAddPresetsWidgetReceiver"
+            android:enabled="@bool/glance_appwidget_available"
+            android:exported="true"
+            android:label="@string/quick_add_presets"
+            tools:ignore="instantiatable">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_add_presets_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.ivy.widget.quickadd.QuickAddKeypadWidgetReceiver"
+            android:enabled="@bool/glance_appwidget_available"
+            android:exported="true"
+            android:label="@string/quick_add_keypad"
+            tools:ignore="instantiatable">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_add_keypad_widget_info" />
+        </receiver>
+
+        <receiver
             android:name="com.ivy.widget.balance.WalletBalanceWidgetReceiver"
             android:enabled="@bool/glance_appwidget_available"
             android:exported="true"
@@ -95,6 +135,34 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/wallet_balance_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.ivy.widget.budget.LeftToSpendWidgetReceiver"
+            android:enabled="@bool/glance_appwidget_available"
+            android:exported="true"
+            android:label="@string/left_to_spend"
+            tools:ignore="instantiatable">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/left_to_spend_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.ivy.widget.recent.RecentTransactionsWidgetReceiver"
+            android:enabled="@bool/glance_appwidget_available"
+            android:exported="true"
+            android:label="@string/recent_transactions"
+            tools:ignore="instantiatable">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/recent_transactions_widget_info" />
         </receiver>
 
         <receiver

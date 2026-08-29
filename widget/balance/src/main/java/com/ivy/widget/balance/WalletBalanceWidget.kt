@@ -77,10 +77,10 @@ class WalletBalanceWidget(
                 income = shortenAmount(income),
                 expense = shortenAmount(expense),
                 onIncomeClick = {
-                    getAppStarter().addTransactionStart(TransactionType.INCOME)
+                    getAppStarter().quickAddStart(TransactionType.INCOME)
                 },
                 onExpenseClick = {
-                    getAppStarter().addTransactionStart(TransactionType.EXPENSE)
+                    getAppStarter().quickAddStart(TransactionType.EXPENSE)
                 },
                 onTransferClick = {
                     getAppStarter().addTransactionStart(TransactionType.TRANSFER)

@@ -5,43 +5,40 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.TileService
+import com.ivy.base.model.TransactionType
+import com.ivy.wallet.quickadd.QuickAddActivity
 
+/**
+ * Logs an expense from the notification shade.
+ *
+ * Same rule as the widgets: the tile opens the quick-add sheet, not the app. Swiping down and
+ * tapping should cost you the transaction, not your place in whatever you were doing.
+ */
 class PaymentTileService : TileService() {
-    // Called when the user adds your tile.
-    override fun onTileAdded() {
-        super.onTileAdded()
-    }
 
-    // Called when your app can update your tile.
-    override fun onStartListening() {
-        super.onStartListening()
-    }
-
-    // Called when your app can no longer update your tile.
-    override fun onStopListening() {
-        super.onStopListening()
-    }
-
-    // Called when the user taps on your tile in an active or inactive state.
     override fun onClick() {
         super.onClick()
 
-        startRootActivity()
-    }
-
-    // Called when the user removes your tile.
-    override fun onTileRemoved() {
-        super.onTileRemoved()
+        startQuickAdd()
     }
 
     @SuppressLint("StartActivityAndCollapseDeprecated")
-    private fun startRootActivity() {
-        val intent = Intent(applicationContext, RootActivity::class.java).apply {
+    private fun startQuickAdd() {
+        val intent = QuickAddActivity.intent(
+            context = applicationContext,
+            type = TransactionType.EXPENSE,
+        ).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val pi = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-            startActivityAndCollapse(pi)
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE
+            )
+            startActivityAndCollapse(pendingIntent)
         } else {
             startActivityAndCollapse(intent)
         }

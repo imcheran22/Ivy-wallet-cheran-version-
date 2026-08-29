@@ -20,14 +20,20 @@ class AddTransactionWidgetClick @Inject constructor(
     }
 
     // ============================= <HANDLE> =======================================================
+    /**
+     * Income and expense open the floating quick-add sheet rather than the app: the whole point
+     * of tapping a widget is not to end up somewhere else. Transfers still need the full editor -
+     * they involve two accounts and, across currencies, an exchange rate, none of which fits in
+     * a sheet you are meant to dismiss in three seconds.
+     */
     fun handleClick(intent: Intent) {
         when (intent.action) {
             ACTION_ADD_INCOME -> {
-                appStarter.addTransactionStart(TransactionType.INCOME)
+                appStarter.quickAddStart(TransactionType.INCOME)
             }
 
             ACTION_ADD_EXPENSE -> {
-                appStarter.addTransactionStart(TransactionType.EXPENSE)
+                appStarter.quickAddStart(TransactionType.EXPENSE)
             }
 
             ACTION_ADD_TRANSFER -> {
