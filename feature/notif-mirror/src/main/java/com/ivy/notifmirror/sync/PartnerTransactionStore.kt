@@ -16,7 +16,16 @@ data class PartnerTransaction(
     val accountName: String,
     val dateTime: Long,
     val receivedAt: Long,
-)
+) {
+    /**
+     * A stable identity for a mirrored transaction, which arrives without an id of its own.
+     *
+     * Used to remember which ones have already been filed into this device's ledger, so
+     * accepting one twice is impossible even after the app restarts.
+     */
+    val key: String
+        get() = "$type|$amount|$dateTime|$title"
+}
 
 @Singleton
 class PartnerTransactionStore @Inject constructor(
@@ -47,7 +56,21 @@ class PartnerTransactionStore @Inject constructor(
     }
 
     fun clear() {
-        prefs.edit().remove(KEY_TRANSACTIONS).apply()
+        prefs.edit().remove(KEY_TRANSACTIONS).remove(KEY_ACCEPTED).apply()
+    }
+
+    fun acceptedKeys(): Set<String> = prefs.getStringSet(KEY_ACCEPTED, emptySet()).orEmpty()
+
+    fun markAccepted(key: String) {
+        prefs.edit()
+            .putStringSet(KEY_ACCEPTED, acceptedKeys() + key)
+            .apply()
+    }
+
+    fun unmarkAccepted(key: String) {
+        prefs.edit()
+            .putStringSet(KEY_ACCEPTED, acceptedKeys() - key)
+            .apply()
     }
 
     private fun PartnerTransaction.toJson(): JSONObject = JSONObject().apply {
@@ -74,6 +97,7 @@ class PartnerTransactionStore @Inject constructor(
 
     companion object {
         private const val KEY_TRANSACTIONS = "partner_txns"
+        private const val KEY_ACCEPTED = "partner_txns_accepted"
         private const val MAX_STORED = 500
     }
 }

@@ -68,6 +68,7 @@ import com.ivy.navigation.CategoriesScreen
 import com.ivy.navigation.IvyPreview
 import com.ivy.navigation.LoansScreen
 import com.ivy.navigation.NotifMirrorScreen
+import com.ivy.navigation.HouseholdScreen
 import com.ivy.navigation.PartnerTransactionsScreen
 import com.ivy.navigation.PlannedPaymentsScreen
 import com.ivy.navigation.ReportScreen
@@ -553,6 +554,13 @@ private fun QuickAccess(
             }
 
             Spacer(Modifier.weight(1f))
+
+            MoreMenuButton(
+                icon = R.drawable.home_more_menu_categories,
+                label = "Household",
+            ) {
+                nav.navigateTo(HouseholdScreen)
+            }
         }
     }
 }

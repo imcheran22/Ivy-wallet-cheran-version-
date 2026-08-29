@@ -153,6 +153,11 @@ data object SmsDiagnosticScreen : Screen
 
 data object PartnerTransactionsScreen : Screen
 
+/**
+ * Your spending and your partner's, added up - and who owes whom.
+ */
+data object HouseholdScreen : Screen
+
 data object FeaturesScreen : Screen
 
 /**

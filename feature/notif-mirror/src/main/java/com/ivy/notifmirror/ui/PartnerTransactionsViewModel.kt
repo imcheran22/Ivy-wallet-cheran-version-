@@ -1,15 +1,23 @@
 package com.ivy.notifmirror.ui
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.ivy.base.model.TransactionType
+import com.ivy.domain.usecase.quickadd.QuickAddOptionsUseCase
+import com.ivy.domain.usecase.quickadd.QuickAddTransactionUseCase
 import com.ivy.notifmirror.sync.PartnerTransaction
 import com.ivy.notifmirror.sync.PartnerTransactionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -36,6 +44,11 @@ data class DayGroup(
 
 data class PartnerUiState(
     val transactions: ImmutableList<PartnerTransaction> = persistentListOf(),
+    /**
+     * Which mirrored transactions have already been filed into this device's books, so the
+     * same spend can't be counted twice.
+     */
+    val acceptedKeys: ImmutableSet<String> = persistentSetOf(),
     val days: ImmutableList<DayGroup> = persistentListOf(),
     val categories: ImmutableList<CategorySlice> = persistentListOf(),
     val totalIncome: Double = 0.0,
@@ -48,6 +61,8 @@ data class PartnerUiState(
 @HiltViewModel
 class PartnerTransactionsViewModel @Inject constructor(
     private val store: PartnerTransactionStore,
+    private val quickAdd: QuickAddTransactionUseCase,
+    private val optionsUseCase: QuickAddOptionsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PartnerUiState())
@@ -64,6 +79,7 @@ class PartnerTransactionsViewModel @Inject constructor(
 
         _state.value = PartnerUiState(
             transactions = transactions.toImmutableList(),
+            acceptedKeys = store.acceptedKeys().toImmutableSet(),
             days = groupByDay(transactions.take(ACTIVITY_LIMIT)),
             categories = sliceByCategory(expenses, expenseTotal),
             totalIncome = transactions.filter { it.type == INCOME }.sumOf { it.amount },
@@ -72,6 +88,43 @@ class PartnerTransactionsViewModel @Inject constructor(
             biggestExpense = expenses.maxByOrNull { it.amount },
             uncategorisedCount = expenses.count { it.category.isBlank() },
         )
+    }
+
+    /**
+     * Files a partner's transaction into this device's ledger.
+     *
+     * The mirrored feed is read-only by nature - it's someone else's phone talking - so this is
+     * the one place where their spending becomes yours: shared rent, a joint grocery run. The
+     * category is matched by name when one exists here; when it doesn't, the transaction lands
+     * uncategorized rather than inventing a category on the user's behalf.
+     */
+    fun accept(transaction: PartnerTransaction) {
+        if (transaction.key in _state.value.acceptedKeys) return
+
+        viewModelScope.launch {
+            val categoryId = runCatching { optionsUseCase.load() }.getOrNull()
+                ?.categories
+                ?.firstOrNull { it.name.equals(transaction.category, ignoreCase = true) }
+                ?.id
+
+            val result = quickAdd.add(
+                type = if (transaction.type == INCOME) {
+                    TransactionType.INCOME
+                } else {
+                    TransactionType.EXPENSE
+                },
+                amount = transaction.amount,
+                categoryId = categoryId,
+                title = transaction.title.takeIf { it.isNotBlank() },
+                description = ACCEPTED_FROM_PARTNER,
+                time = Instant.ofEpochMilli(transaction.dateTime),
+            )
+
+            if (result is QuickAddTransactionUseCase.Result.Added) {
+                store.markAccepted(transaction.key)
+                refresh()
+            }
+        }
     }
 
     fun clearAll() {
@@ -130,6 +183,7 @@ class PartnerTransactionsViewModel @Inject constructor(
     private companion object {
         const val INCOME = "INCOME"
         const val EXPENSE = "EXPENSE"
+        const val ACCEPTED_FROM_PARTNER = "Accepted from partner"
         const val MONTH_ABBREV = 3
 
         /**

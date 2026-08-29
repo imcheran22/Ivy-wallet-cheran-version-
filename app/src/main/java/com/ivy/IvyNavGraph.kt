@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import com.ivy.balance.BalanceScreen
 import com.ivy.battery.ui.BatteryScreenImpl
 import com.ivy.notifmirror.ui.NotifMirrorScreenImpl
+import com.ivy.notifmirror.ui.HouseholdScreenImpl
 import com.ivy.notifmirror.ui.PartnerTransactionsScreenImpl
 import com.ivy.budgets.BudgetScreen
 import com.ivy.categories.CategoriesScreen
@@ -29,6 +30,7 @@ import com.ivy.navigation.EditPlannedScreen
 import com.ivy.navigation.EditTransactionScreen
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
+import com.ivy.navigation.HouseholdScreen
 import com.ivy.navigation.ImportScreen
 import com.ivy.navigation.LoanDetailsScreen
 import com.ivy.navigation.LoansScreen
@@ -97,6 +99,7 @@ fun BoxWithConstraintsScope.IvyNavGraph(screen: Screen?) {
         SmsInboxScreen -> SmsInboxScreenImpl()
         SmsDiagnosticScreen -> SmsDiagnosticScreenImpl()
         PartnerTransactionsScreen -> PartnerTransactionsScreenImpl()
+        HouseholdScreen -> HouseholdScreenImpl()
         FeaturesScreen -> FeaturesScreenImpl()
         QuickAddSettingsScreen -> QuickAddSettingsScreenImpl()
         InsightsScreen -> InsightsScreenImpl()

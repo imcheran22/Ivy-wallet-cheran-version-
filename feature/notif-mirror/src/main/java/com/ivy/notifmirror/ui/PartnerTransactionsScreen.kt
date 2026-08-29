@@ -99,7 +99,11 @@ fun PartnerTransactionsScreenImpl(
             Spacer(Modifier.height(12.dp))
             DayHeader(label = day.label, total = day.total, currency = state.mainCurrency)
             day.transactions.forEach { tx ->
-                TransactionRow(tx)
+                TransactionRow(
+                    tx = tx,
+                    accepted = tx.key in state.acceptedKeys,
+                    onAccept = { viewModel.accept(tx) },
+                )
             }
         }
     }
@@ -293,8 +297,15 @@ private fun DayHeader(label: String, total: Double, currency: String) {
     }
 }
 
+/**
+ * One mirrored transaction, with the one action that turns it from news into bookkeeping.
+ */
 @Composable
-private fun TransactionRow(tx: PartnerTransaction) {
+private fun TransactionRow(
+    tx: PartnerTransaction,
+    accepted: Boolean,
+    onAccept: () -> Unit,
+) {
     val isIncome = tx.type == "INCOME"
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -340,6 +351,19 @@ private fun TransactionRow(tx: PartnerTransaction) {
             fontWeight = FontWeight.Bold,
             color = if (isIncome) positive() else MaterialTheme.colorScheme.onSurface,
         )
+
+        Spacer(Modifier.width(4.dp))
+
+        if (accepted) {
+            Text(
+                text = "In your books",
+                style = MaterialTheme.typography.labelSmall,
+                color = positive(),
+                fontWeight = FontWeight.SemiBold,
+            )
+        } else {
+            TextButton(onClick = onAccept) { Text("Add to mine") }
+        }
     }
 }
 
