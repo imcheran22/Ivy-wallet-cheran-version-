@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +44,7 @@ import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.design.utils.hideKeyboard
 import com.ivy.domain.usecase.budget.BudgetCapCheck
+import com.ivy.domain.usecase.split.SplitPart
 import com.ivy.legacy.IvyWalletPreview
 import com.ivy.legacy.data.EditTransactionDisplayLoan
 import com.ivy.legacy.datamodel.Account
@@ -69,6 +71,7 @@ import com.ivy.wallet.ui.edit.core.EditBottomSheet
 import com.ivy.wallet.ui.edit.core.Title
 import com.ivy.wallet.ui.edit.core.Toolbar
 import com.ivy.wallet.ui.theme.components.AddPrimaryAttributeButton
+import com.ivy.wallet.ui.theme.components.IvyOutlinedButton
 import com.ivy.wallet.ui.theme.components.ChangeTransactionTypeModal
 import com.ivy.wallet.ui.theme.components.CustomExchangeRateCard
 import com.ivy.wallet.ui.theme.modal.DeleteModal
@@ -131,6 +134,17 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransactionScreen)
         transactionAssociatedTags = uiState.transactionAssociatedTags,
         hasChanges = uiState.hasChanges,
         budgetCapCheck = uiState.budgetCapCheck,
+        attachmentUrl = uiState.attachmentUrl,
+        splitResult = uiState.splitResult,
+        onAttachmentChanged = {
+            viewModel.onEvent(EditTransactionViewEvent.OnAttachmentChanged(it))
+        },
+        onSplit = {
+            viewModel.onEvent(EditTransactionViewEvent.SplitTransaction(it))
+        },
+        onDismissSplitResult = {
+            viewModel.onEvent(EditTransactionViewEvent.DismissSplitResult)
+        },
         onSetDate = {
             viewModel.onEvent(EditTransactionViewEvent.OnChangeDate)
         },
@@ -242,6 +256,11 @@ private fun BoxWithConstraintsScope.UI(
     backgroundProcessing: Boolean = false,
     hasChanges: Boolean = false,
     budgetCapCheck: BudgetCapCheck? = null,
+    attachmentUrl: String? = null,
+    splitResult: SplitOutcome? = null,
+    onAttachmentChanged: (String?) -> Unit = {},
+    onSplit: (List<SplitPart>) -> Unit = {},
+    onDismissSplitResult: () -> Unit = {},
 
     ) {
     var chooseCategoryModalVisible by remember { mutableStateOf(false) }
@@ -254,6 +273,7 @@ private fun BoxWithConstraintsScope.UI(
     var amountModalShown by remember { mutableStateOf(false) }
     var exchangeRateAmountModalShown by remember { mutableStateOf(false) }
     var accountChangeModal by remember { mutableStateOf(false) }
+    var splitDialogVisible by remember { mutableStateOf(false) }
     val waitModalVisible by remember(backgroundProcessing) {
         mutableStateOf(backgroundProcessing)
     }
@@ -367,6 +387,33 @@ private fun BoxWithConstraintsScope.UI(
             tagModelVisible = true
         })
 
+        Spacer(Modifier.height(16.dp))
+
+        ReceiptSection(
+            attachmentUrl = attachmentUrl,
+            onAttachmentChanged = onAttachmentChanged,
+        )
+
+        // Splitting rewrites an existing transaction, so there has to be one to rewrite.
+        if (screen.initialTransactionId != null && transactionType != TransactionType.TRANSFER) {
+            Spacer(Modifier.height(12.dp))
+
+            Row(modifier = Modifier.padding(horizontal = 24.dp)) {
+                IvyOutlinedButton(
+                    text = stringResource(R.string.split),
+                    iconStart = R.drawable.ic_custom_transfer_m,
+                ) {
+                    splitDialogVisible = true
+                }
+            }
+        }
+
+        if (splitResult != null) {
+            Spacer(Modifier.height(8.dp))
+
+            SplitResultBanner(outcome = splitResult, onDismiss = onDismissSplitResult)
+        }
+
         Spacer(Modifier.height(32.dp))
 
         val ivyContext = ivyWalletCtx()
@@ -442,6 +489,19 @@ private fun BoxWithConstraintsScope.UI(
         }
 
         Spacer(Modifier.height(600.dp)) // scroll hack
+    }
+
+    if (splitDialogVisible) {
+        SplitDialog(
+            totalAmount = amount,
+            currency = baseCurrency,
+            categories = categories,
+            onDismiss = { splitDialogVisible = false },
+            onSplit = {
+                onSplit(it)
+                splitDialogVisible = false
+            },
+        )
     }
 
     onScreenStart {

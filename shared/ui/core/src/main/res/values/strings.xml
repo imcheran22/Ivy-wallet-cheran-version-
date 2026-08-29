@@ -556,4 +556,17 @@
     <string name="trip_currency">Spending currency (optional)</string>
     <string name="trip_per_day">%1$s %2$s a day over %3$d days · %4$d transactions</string>
     <string name="name">Name</string>
+    <!-- Receipts and splitting -->
+    <string name="attach_receipt">Attach receipt</string>
+    <string name="remove_receipt">Remove</string>
+    <string name="receipt">Receipt</string>
+    <string name="split">Split</string>
+    <string name="remove">Remove</string>
+    <string name="split_transaction">Split this transaction</string>
+    <string name="split_explainer">Add a share for each part that wasn\'t yours. Whatever is left stays on this transaction as your own share. Name someone in \"Owed by\" and their share becomes a loan instead of a category.</string>
+    <string name="add_share">Add share</string>
+    <string name="owed_by_optional">Owed by (optional)</string>
+    <string name="your_share_remaining">Your share: %1$s %2$s</string>
+    <string name="split_done">Split: %1$d transactions and %2$d loans created</string>
+    <string name="split_too_large">The shares add up to the whole transaction - leave something as your own share.</string>
 </resources>

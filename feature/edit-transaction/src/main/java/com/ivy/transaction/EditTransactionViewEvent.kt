@@ -6,6 +6,7 @@ import com.ivy.data.model.Category
 import com.ivy.data.model.Tag
 import com.ivy.data.model.TagId
 import com.ivy.domain.usecase.budget.BudgetCapCheck
+import com.ivy.domain.usecase.split.SplitPart
 import com.ivy.legacy.data.EditTransactionDisplayLoan
 import com.ivy.legacy.datamodel.Account
 import com.ivy.wallet.domain.data.CustomExchangeRateState
@@ -41,6 +42,21 @@ data class EditTransactionViewState(
      * What this expense does to the budget it lands in, shown while it's still being typed.
      */
     val budgetCapCheck: BudgetCapCheck? = null,
+    /** A photo of the receipt, when one has been attached. */
+    val attachmentUrl: String? = null,
+    val splitResult: SplitOutcome? = null,
+)
+
+/**
+ * The outcome of the last split, so the screen can say what it did rather than silently
+ * changing the amount the user was looking at.
+ */
+@Immutable
+data class SplitOutcome(
+    val createdTransactions: Int,
+    val createdLoans: Int,
+    /** The parts added up to the whole transaction or more, so nothing was written. */
+    val partsExceedTotal: Boolean = false,
 )
 
 sealed interface EditTransactionViewEvent {
@@ -65,6 +81,9 @@ sealed interface EditTransactionViewEvent {
     data class Save(val closeScreen: Boolean) : EditTransactionViewEvent
     data class SetHasChanges(val hasChangesValue: Boolean) : EditTransactionViewEvent
     data class UpdateExchangeRate(val exRate: Double?) : EditTransactionViewEvent
+    data class OnAttachmentChanged(val url: String?) : EditTransactionViewEvent
+    data class SplitTransaction(val parts: List<SplitPart>) : EditTransactionViewEvent
+    data object DismissSplitResult : EditTransactionViewEvent
 
     sealed interface TagEvent : EditTransactionViewEvent {
         data class SaveTag(val name: String) : TagEvent

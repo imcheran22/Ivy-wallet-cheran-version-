@@ -29,6 +29,8 @@ import com.ivy.data.model.primitive.NotBlankTrimmedString
 import com.ivy.data.repository.CategoryRepository
 import com.ivy.domain.usecase.budget.BudgetCapCheck
 import com.ivy.domain.usecase.budget.BudgetCapCheckUseCase
+import com.ivy.domain.usecase.split.SplitPart
+import com.ivy.domain.usecase.split.SplitTransactionUseCase
 import com.ivy.data.repository.TagRepository
 import com.ivy.data.repository.TransactionRepository
 import com.ivy.data.repository.mapper.TagMapper
@@ -112,6 +114,7 @@ class EditTransactionViewModel @Inject constructor(
     private val dateTimePicker: DateTimePicker,
     private val coupleTransactionSyncer: CoupleTransactionSyncer,
     private val budgetCapCheckUseCase: BudgetCapCheckUseCase,
+    private val splitTransactionUseCase: SplitTransactionUseCase,
 ) : ComposeViewModel<EditTransactionViewState, EditTransactionViewEvent>() {
 
     private var transactionType by mutableStateOf(TransactionType.EXPENSE)
@@ -130,6 +133,8 @@ class EditTransactionViewModel @Inject constructor(
     private var category by mutableStateOf<Category?>(null)
     private var amount by mutableDoubleStateOf(0.0)
     private var budgetCapCheck by mutableStateOf<BudgetCapCheck?>(null)
+    private var attachmentUrl by mutableStateOf<String?>(null)
+    private var splitResult by mutableStateOf<SplitOutcome?>(null)
     private var hasChanges by mutableStateOf(false)
     private var displayLoanHelper by mutableStateOf(EditTransactionDisplayLoan())
 
@@ -216,6 +221,8 @@ class EditTransactionViewModel @Inject constructor(
             tags = getTags(),
             transactionAssociatedTags = getTransactionAssociatedTags(),
             budgetCapCheck = budgetCapCheck,
+            attachmentUrl = attachmentUrl,
+            splitResult = splitResult,
         )
     }
 
@@ -343,6 +350,9 @@ class EditTransactionViewModel @Inject constructor(
             is EditTransactionViewEvent.OnToAccountChanged -> onToAccountChanged(event.newAccount)
             is EditTransactionViewEvent.Save -> save(event.closeScreen)
             is EditTransactionViewEvent.SetHasChanges -> setHasChanges(event.hasChangesValue)
+            is EditTransactionViewEvent.OnAttachmentChanged -> onAttachmentChanged(event.url)
+            is EditTransactionViewEvent.SplitTransaction -> splitTransaction(event.parts)
+            EditTransactionViewEvent.DismissSplitResult -> splitResult = null
             is EditTransactionViewEvent.UpdateExchangeRate -> updateExchangeRate(event.exRate)
             is EditTransactionViewEvent.TagEvent -> handleTagEvent(event)
         }
@@ -402,6 +412,7 @@ class EditTransactionViewModel @Inject constructor(
             categoryRepository.findById(CategoryId(it))
         }
         amount = transaction.amount.toDouble()
+        attachmentUrl = transaction.attachmentUrl
 
         updateCurrency(account = selectedAccount)
 
@@ -604,6 +615,46 @@ class EditTransactionViewModel @Inject constructor(
      * Recomputed on every change that could move the answer. Only expenses can break a budget,
      * so income and transfers clear the warning rather than leaving a stale one on screen.
      */
+    /**
+     * Receipts live on the transaction, so attaching one is an ordinary edit - it goes through
+     * the same save path and travels with the transaction into backups and exports.
+     */
+    private fun onAttachmentChanged(url: String?) {
+        attachmentUrl = url
+        loadedTransaction = loadedTransaction().copy(attachmentUrl = url)
+        saveIfEditMode()
+    }
+
+    private fun splitTransaction(parts: List<SplitPart>) {
+        val transactionId = loadedTransaction?.id ?: return
+
+        viewModelScope.launch {
+            when (val result = splitTransactionUseCase.split(transactionId, parts)) {
+                is SplitTransactionUseCase.Result.Split -> {
+                    splitResult = SplitOutcome(
+                        createdTransactions = result.createdTransactions,
+                        createdLoans = result.createdLoans,
+                    )
+                    // The original now holds only the user's own share, so reload it.
+                    trnByIdAct(transactionId)?.let {
+                        loadedTransaction = it
+                        display(it)
+                    }
+                    refreshBudgetCapCheck()
+                }
+
+                SplitTransactionUseCase.Result.PartsExceedTotal -> splitResult = SplitOutcome(
+                    createdTransactions = 0,
+                    createdLoans = 0,
+                    partsExceedTotal = true,
+                )
+
+                SplitTransactionUseCase.Result.NotFound,
+                SplitTransactionUseCase.Result.NothingToSplit -> splitResult = null
+            }
+        }
+    }
+
     private fun refreshBudgetCapCheck() {
         viewModelScope.launch {
             budgetCapCheck = if (transactionType == TransactionType.EXPENSE) {

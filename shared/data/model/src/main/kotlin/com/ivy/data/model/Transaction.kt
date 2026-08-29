@@ -71,6 +71,11 @@ data class TransactionMetadata(
     val loanId: UUID? = null,
     // This refers to the loan record id that is linked with a transaction
     val loanRecordId: UUID?,
+    /**
+     * A photo of the receipt, as a content URI the app holds a persistable read grant for.
+     * Part of the transaction rather than a side table so it survives export and restore.
+     */
+    val attachmentUrl: String? = null,
 )
 
 fun Transaction.getFromValue(): PositiveValue = when (this) {
