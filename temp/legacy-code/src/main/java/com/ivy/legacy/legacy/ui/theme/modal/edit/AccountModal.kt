@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ivy.design.l0_system.UI
@@ -172,20 +174,33 @@ fun BoxWithConstraintsScope.AccountModal(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // An OutlinedTextField that isn't told to fill its parent stops at
+        // TextFieldDefaults.MinWidth (280.dp), which is narrower than this
+        // label: the label then ran past the outline and got clipped. Fill the
+        // modal width, keep the label short enough to survive a large font
+        // scale on a narrow phone, and let it ellipsize rather than clip if it
+        // still doesn't fit. "Optional" moved into the hint below.
         OutlinedTextField(
             value = bankAccountSuffix,
             onValueChange = { bankAccountSuffix = it.take(6) },
             modifier = Modifier
                 .padding(horizontal = 16.dp)
+                .fillMaxWidth()
                 .testTag("account_modal_bank_suffix"),
-            label = { Text("Bank a/c or card last digits (optional)") },
+            label = {
+                Text(
+                    text = "Bank a/c or card last digits",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
             placeholder = { Text("e.g. 5555") },
             singleLine = true
         )
 
         Text(
             modifier = Modifier.padding(horizontal = 16.dp),
-            text = "Used to auto-match this account when a bank SMS is imported",
+            text = "Optional. Used to auto-match this account when a bank SMS is imported",
             style = UI.typo.c.style(color = Gray)
         )
 
