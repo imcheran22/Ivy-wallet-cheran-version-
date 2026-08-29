@@ -33,6 +33,8 @@ import com.ivy.navigation.ReportScreen
 import com.ivy.navigation.Screen
 import com.ivy.navigation.SearchScreen
 import com.ivy.navigation.SettingsScreen
+import com.ivy.navigation.SmsDiagnosticScreen
+import com.ivy.navigation.SmsInboxScreen
 import com.ivy.navigation.TransactionsScreen
 import com.ivy.onboarding.OnboardingScreen
 import com.ivy.piechart.PieChartStatisticScreen
@@ -41,6 +43,8 @@ import com.ivy.planned.list.PlannedPaymentsScreen
 import com.ivy.reports.ReportScreen
 import com.ivy.search.SearchScreen
 import com.ivy.settings.SettingsScreen
+import com.ivy.smsinbox.ui.SmsDiagnosticScreenImpl
+import com.ivy.smsinbox.ui.SmsInboxScreenImpl
 import com.ivy.transaction.EditTransactionScreen
 import com.ivy.transactions.TransactionsScreen
 
@@ -72,6 +76,8 @@ fun BoxWithConstraintsScope.IvyNavGraph(screen: Screen?) {
         is LoanDetailsScreen -> LoanDetailsScreen(screen = screen)
         is SearchScreen -> SearchScreen(screen = screen)
         is CSVScreen -> CSVScreen(screen = screen)
+        SmsInboxScreen -> SmsInboxScreenImpl()
+        SmsDiagnosticScreen -> SmsDiagnosticScreenImpl()
         FeaturesScreen -> FeaturesScreenImpl()
     }
 }

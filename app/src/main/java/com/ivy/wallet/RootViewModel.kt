@@ -9,6 +9,7 @@ import com.ivy.base.legacy.Theme
 import com.ivy.base.legacy.stringRes
 import com.ivy.base.model.TransactionType
 import com.ivy.data.db.dao.read.SettingsDao
+import com.ivy.domain.usecase.sms.SmsCatchUpUseCase
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.utils.ioThread
@@ -40,6 +41,7 @@ class RootViewModel @Inject constructor(
     private val sharedPrefs: SharedPrefs,
     private val transactionReminderLogic: TransactionReminderLogic,
     private val migrationsManager: MigrationsManager,
+    private val smsCatchUpUseCase: SmsCatchUpUseCase,
 ) : ViewModel() {
 
     companion object {
@@ -88,6 +90,15 @@ class RootViewModel @Inject constructor(
 
         viewModelScope.launch {
             migrationsManager.executeMigrations()
+        }
+
+        viewModelScope.launch {
+            // The SMS broadcast receiver is the fast path, not the guarantee - several OEM
+            // builds stop delivering it without telling the app. Sweeping the inbox on every
+            // open is what makes capture eventually correct; the importer dedupes, so a sweep
+            // over already-captured messages costs nothing but a read.
+            runCatching { smsCatchUpUseCase.sweep() }
+                .onFailure { Timber.w(it, "SMS catch-up sweep failed") }
         }
     }
 

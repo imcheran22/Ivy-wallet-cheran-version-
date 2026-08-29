@@ -1,5 +1,9 @@
 package com.ivy.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -29,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,18 +43,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.ivy.base.legacy.Theme
+import com.ivy.design.l0_system.Orange
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.design.l1_buildingBlocks.IconScale
 import com.ivy.design.l1_buildingBlocks.IvyIconScaled
 import com.ivy.design.utils.thenIf
 import com.ivy.legacy.IvyWalletPreview
+import com.ivy.legacy.ivyWalletCtx
 import com.ivy.legacy.rootScreen
 import com.ivy.legacy.utils.drawColoredShadow
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
 import com.ivy.navigation.ImportScreen
+import com.ivy.navigation.SmsDiagnosticScreen
+import com.ivy.navigation.SmsInboxScreen
 import com.ivy.navigation.navigation
 import com.ivy.navigation.screenScopedViewModel
 import com.ivy.ui.R
@@ -67,6 +77,11 @@ import com.ivy.wallet.ui.theme.modal.DeleteModal
 import com.ivy.wallet.ui.theme.modal.NameModal
 import com.ivy.wallet.ui.theme.modal.ProgressModal
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Date
 import java.util.Locale
 
@@ -92,6 +107,8 @@ fun BoxWithConstraintsScope.SettingsScreen() {
         nameLocalAccount = uiState.name,
         startDateOfMonth = uiState.startDateOfMonth.toInt(),
         languageOptionVisible = uiState.languageOptionVisible,
+        smsAutoImportEnabled = uiState.smsAutoImportEnabled,
+        smsCapture = uiState.smsCapture,
         cloudSyncEnabled = uiState.cloudSyncEnabled,
         cloudSyncSupabaseUrl = uiState.cloudSyncSupabaseUrl,
         cloudSyncSupabaseAnonKey = uiState.cloudSyncSupabaseAnonKey,
@@ -137,6 +154,15 @@ fun BoxWithConstraintsScope.SettingsScreen() {
         onSwitchLanguage = {
             viewModel.onEvent(SettingsEvent.SwitchLanguage)
         },
+        onSetSmsAutoImportEnabled = {
+            viewModel.onEvent(SettingsEvent.SetSmsAutoImportEnabled(it))
+        },
+        onSetSmsImportFrom = {
+            viewModel.onEvent(SettingsEvent.SetSmsImportFrom(it))
+        },
+        onCatchUpOnSms = {
+            viewModel.onEvent(SettingsEvent.CatchUpOnSms)
+        },
         onSetCloudSyncEnabled = {
             viewModel.onEvent(SettingsEvent.SetCloudSyncEnabled(it))
         },
@@ -181,12 +207,17 @@ private fun BoxWithConstraintsScope.UI(
     onDeleteAllUserData: () -> Unit = {},
     onDeleteCloudUserData: () -> Unit = {},
     onSwitchLanguage: () -> Unit = {},
+    smsAutoImportEnabled: Boolean = false,
+    smsCapture: SmsCaptureSummary = SmsCaptureSummary(),
     cloudSyncEnabled: Boolean = false,
     cloudSyncSupabaseUrl: String = "",
     cloudSyncSupabaseAnonKey: String = "",
     cloudSyncInProgress: Boolean = false,
     cloudSyncLastSyncedEpochMs: Long? = null,
     cloudSyncError: String? = null,
+    onSetSmsAutoImportEnabled: (Boolean) -> Unit = {},
+    onSetSmsImportFrom: (LocalDate) -> Unit = {},
+    onCatchUpOnSms: () -> Unit = {},
     onSetCloudSyncEnabled: (Boolean) -> Unit = {},
     onSetCloudSyncCredentials: (String, String) -> Unit = { _, _ -> },
     onTriggerCloudSyncNow: () -> Unit = {},
@@ -409,9 +440,52 @@ private fun BoxWithConstraintsScope.UI(
         }
 
         item {
-            SettingsSectionDivider(text = "Cloud sync")
+            SettingsSectionDivider(text = "SMS & cloud sync")
 
             Spacer(Modifier.height(16.dp))
+
+            SmsAutoImportSwitch(
+                enabled = smsAutoImportEnabled,
+                onSetEnabled = onSetSmsAutoImportEnabled
+            )
+
+            if (smsAutoImportEnabled) {
+                Spacer(Modifier.height(12.dp))
+
+                SmsImportFromRow(
+                    importFromEpochMs = smsCapture.importFromEpochMs,
+                    onPick = onSetSmsImportFrom
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            SmsCaptureStatusCard(
+                summary = smsCapture,
+                onCatchUp = onCatchUpOnSms
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_category_m,
+                text = "Sort inbox",
+                description = "Tell the auto-imported transactions what they were for. " +
+                    "Name a payee once and every future payment to it sorts itself.",
+                onClick = { nav.navigateTo(SmsInboxScreen) }
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_document_m,
+                text = "SMS dry run",
+                description = "See which senders text you about money and exactly what the " +
+                    "parser would extract - before anything is written.",
+                onClick = { nav.navigateTo(SmsDiagnosticScreen) }
+            )
+
+            Spacer(Modifier.height(12.dp))
 
             CloudSyncSection(
                 cloudSyncEnabled = cloudSyncEnabled,
@@ -681,6 +755,208 @@ private fun AppSwitch(
         Spacer(Modifier.width(16.dp))
     }
 }
+
+@Composable
+private fun SmsAutoImportSwitch(
+    enabled: Boolean,
+    onSetEnabled: (Boolean) -> Unit
+) {
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        val granted = grants[Manifest.permission.RECEIVE_SMS] == true
+        onSetEnabled(granted)
+    }
+
+    AppSwitch(
+        lockApp = enabled,
+        onSetLockApp = { turnOn ->
+            if (turnOn) {
+                val alreadyGranted = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.RECEIVE_SMS
+                ) == PackageManager.PERMISSION_GRANTED
+                if (alreadyGranted) {
+                    onSetEnabled(true)
+                } else {
+                    permissionLauncher.launch(
+                        arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS)
+                    )
+                }
+            } else {
+                onSetEnabled(false)
+            }
+        },
+        text = "Auto-import transactions from SMS",
+        description = "Best-effort: reads incoming bank SMS for amount, account and payee, " +
+            "then files it. Anything it can't categorise waits in Sort inbox. Cash and " +
+            "banks that don't text you are missed.",
+        icon = R.drawable.ic_notification_m
+    )
+}
+
+/**
+ * Proof that capture is running, rather than a switch that merely claims to be on.
+ *
+ * Live capture depends on Android delivering an SMS broadcast, and some phones quietly stop
+ * doing that for backgrounded apps. When that happens the switch still reads "on" and no
+ * transactions appear - indistinguishable, from the outside, from a week with no spending.
+ * The counter and the timestamps are what tell those two apart, and "Catch up now" re-reads
+ * the inbox so a suspicion can be settled instead of lived with.
+ */
+/**
+ * The start date, stated as a date rather than a duration.
+ *
+ * Capture reads an inbox that may hold months of alerts, and importing all of it turns a
+ * ledger into an archive nobody asked for. This is the line: messages before it are never
+ * imported, by the receiver or by a sweep, so moving it is the one control that decides how
+ * much history the app takes on.
+ */
+@Suppress("DEPRECATION")
+@Composable
+private fun SmsImportFromRow(
+    importFromEpochMs: Long?,
+    onPick: (LocalDate) -> Unit,
+) {
+    val ivyContext = ivyWalletCtx()
+    val zone = remember { ZoneId.systemDefault() }
+    val date = remember(importFromEpochMs) {
+        importFromEpochMs?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate() }
+    }
+    val formatter = remember {
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(zone)
+    }
+
+    SettingsDefaultButton(
+        icon = R.drawable.ic_custom_calendar_m,
+        text = "Import messages from",
+        description = date?.let {
+            "Only bank messages received on or after ${formatter.format(it)} are imported. " +
+                "Tap to change."
+        } ?: "Tap to choose how far back to import from.",
+        onClick = {
+            ivyContext.datePicker(
+                maxDate = LocalDate.now(),
+                initialDate = date ?: LocalDate.now(),
+                onDatePicked = onPick
+            )
+        }
+    )
+}
+
+@Composable
+private fun SmsCaptureStatusCard(
+    summary: SmsCaptureSummary,
+    onCatchUp: () -> Unit,
+) {
+    if (!summary.enabled) return
+
+    val problem = when {
+        !summary.permissionGranted -> "SMS permission was revoked - turn the switch off and " +
+            "on again to re-request it."
+
+        summary.capturedTotal == 0 -> "Nothing captured yet. If your bank has texted you " +
+            "since you turned this on, run a dry run to see what the parser makes of it."
+
+        else -> null
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .clip(UI.shapes.r4)
+            .background(UI.colors.medium)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+    ) {
+        Text(
+            text = "Capture status",
+            style = UI.typo.b2.style(fontWeight = FontWeight.Bold)
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        StatusLine(label = "Captured so far", value = "${summary.capturedTotal}")
+        StatusLine(label = "Last captured", value = relativeTimeLabel(summary.lastCaptureAtEpochMs))
+        StatusLine(label = "Last checked", value = relativeTimeLabel(summary.lastSweepAtEpochMs))
+        summary.lastSweepSummary?.let {
+            StatusLine(label = "Last result", value = it)
+        }
+
+        if (problem != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = problem,
+                style = UI.typo.c.style(color = Orange, fontWeight = FontWeight.SemiBold)
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            modifier = Modifier
+                .clip(UI.shapes.rFull)
+                .background(UI.colors.pure)
+                .clickable(enabled = !summary.sweeping) { onCatchUp() }
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            text = if (summary.sweeping) "Checking..." else "Catch up now",
+            style = UI.typo.b2.style(
+                color = UI.colors.pureInverse,
+                fontWeight = FontWeight.Bold
+            )
+        )
+
+        Spacer(Modifier.height(6.dp))
+
+        Text(
+            text = "Re-reads your inbox and imports anything that was missed. Safe to run " +
+                "as often as you like - messages already captured are skipped.",
+            style = UI.typo.c.style(color = UI.colors.gray)
+        )
+    }
+}
+
+@Composable
+private fun StatusLine(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+        Text(
+            text = label,
+            style = UI.typo.c.style(color = UI.colors.gray, fontWeight = FontWeight.SemiBold)
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            modifier = Modifier.weight(1.4f),
+            text = value,
+            textAlign = TextAlign.End,
+            style = UI.typo.c.style(
+                color = UI.colors.pureInverse,
+                fontWeight = FontWeight.SemiBold
+            )
+        )
+    }
+}
+
+/**
+ * Absolute timestamps make the reader do arithmetic to answer the only question they have,
+ * which is whether this happened recently enough to trust.
+ */
+private fun relativeTimeLabel(epochMs: Long?): String {
+    if (epochMs == null || epochMs <= 0L) return "Never"
+    val minutes = (System.currentTimeMillis() - epochMs) / MILLIS_PER_MINUTE
+    return when {
+        minutes < 1 -> "Just now"
+        minutes < MINUTES_PER_HOUR -> "$minutes min ago"
+        minutes < MINUTES_PER_DAY -> "${minutes / MINUTES_PER_HOUR} hr ago"
+        minutes < MINUTES_PER_WEEK -> "${minutes / MINUTES_PER_DAY} days ago"
+        else -> SimpleDateFormat("d MMM, h:mm a", Locale.getDefault()).format(Date(epochMs))
+    }
+}
+
+private const val MILLIS_PER_MINUTE = 60_000L
+private const val MINUTES_PER_HOUR = 60L
+private const val MINUTES_PER_DAY = 1_440L
+private const val MINUTES_PER_WEEK = 10_080L
 
 @Composable
 private fun CloudSyncSection(

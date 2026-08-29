@@ -47,6 +47,8 @@ import com.ivy.design.api.LocalTimeFormatter
 import com.ivy.design.api.LocalTimeProvider
 import com.ivy.design.l0_system.BlueLight
 import com.ivy.design.l0_system.UI
+import com.ivy.domain.usecase.sms.BankSmsParser
+import com.ivy.domain.usecase.sms.SmsTransactionMarker
 import com.ivy.design.l0_system.style
 import com.ivy.design.l1_buildingBlocks.IvyText
 import com.ivy.design.l1_buildingBlocks.SpacerHor
@@ -395,8 +397,19 @@ fun CategoryBadgeDisplay(
     }
 }
 
-private fun getTransactionTitle(transaction: Transaction): String? =
-    transaction.title?.takeIf { it.isNotBlank() }
+/**
+ * Auto-imported names are re-tidied on the way to the screen. A QR aggregator's own reference
+ * ("BHARATPE9O7A7B2M0F2X04941") was stored verbatim before the parser learned to strip it, and
+ * this is what stops those rows from staying unreadable forever.
+ */
+private fun getTransactionTitle(transaction: Transaction): String? {
+    val title = transaction.title?.takeIf { it.isNotBlank() } ?: return null
+    return if (SmsTransactionMarker.isAutoImported(transaction.description)) {
+        BankSmsParser.readablePayee(title)
+    } else {
+        title
+    }
+}
 
 @Composable
 private fun getTransactionDescription(transaction: Transaction): String? {
@@ -404,7 +417,10 @@ private fun getTransactionDescription(transaction: Transaction): String? {
         transaction.paidFor?.toLocalDateTime()
     }
     return when {
-        transaction.description.isNotNullOrBlank() -> transaction.description
+        // Never render the raw stored text: an auto-imported transaction carries a machine
+        // dedupe marker in this field, and it is not for the user to read.
+        transaction.description.isNotNullOrBlank() ->
+            SmsTransactionMarker.displayText(transaction.description)
 
         transaction.recurringRuleId != null &&
                 transaction.dueDate == null &&

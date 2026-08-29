@@ -19,6 +19,15 @@ object DatastoreKeys {
     val GITHUB_LAST_BACKUP_EPOCH_SEC =
         longPreferencesKey("github_backup_last_backup_time_epoch_sec")
 
+    // SMS auto-import
+    val SMS_AUTO_IMPORT_ENABLED = booleanPreferencesKey("sms_auto_import_enabled")
+
+    /**
+     * Nothing older than this is ever imported. Set when auto-import is first switched on, and
+     * editable in Settings, so turning capture on does not backfill months of old alerts.
+     */
+    val SMS_IMPORT_FROM_EPOCH_MS = longPreferencesKey("sms_import_from_epoch_ms")
+
     // Cloud sync (Supabase)
     val CLOUD_SYNC_ENABLED = booleanPreferencesKey("cloud_sync_enabled")
     val CLOUD_SYNC_SUPABASE_URL = stringPreferencesKey("cloud_sync_supabase_url")
