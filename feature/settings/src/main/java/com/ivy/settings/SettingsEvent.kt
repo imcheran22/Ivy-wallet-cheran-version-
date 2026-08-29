@@ -23,6 +23,7 @@ sealed interface SettingsEvent {
 
     data class SetSmsAutoImportEnabled(val enabled: Boolean) : SettingsEvent
     data object CatchUpOnSms : SettingsEvent
+    data class SetQuickAddNotificationEnabled(val enabled: Boolean) : SettingsEvent
     data class SetSmsImportFrom(val date: LocalDate) : SettingsEvent
     data class SetCloudSyncEnabled(val enabled: Boolean) : SettingsEvent
     data class SetCloudSyncCredentials(val url: String, val anonKey: String) : SettingsEvent

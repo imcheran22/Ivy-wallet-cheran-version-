@@ -360,6 +360,20 @@ fun HomeLazyColumn(
                     .sumOf { it.amount.toDouble() }
             }
 
+            // Only meaningful part-way through a month: on the 1st a single day of
+            // spending would project wildly, and on the last day there is nothing
+            // left to change.
+            val monthProgress = today.dayOfMonth.toDouble() / today.lengthOfMonth()
+            val projectedMonthEnd = if (
+                stats.expense.toDouble() > 0.0 &&
+                today.dayOfMonth >= PROJECTION_FIRST_DAY &&
+                today.dayOfMonth < today.lengthOfMonth()
+            ) {
+                stats.expense.toDouble() / monthProgress
+            } else {
+                0.0
+            }
+
             CashFlowInfo(
                 currency = baseData.baseCurrency,
                 balance = balance.toDouble(),
@@ -374,6 +388,7 @@ fun HomeLazyColumn(
                 unsortedIncomeCount = incomeTransactions.count { it.categoryId == null },
                 unsortedExpenseCount = expenseTransactions.count { it.categoryId == null },
                 spentToday = spentToday,
+                projectedMonthEnd = projectedMonthEnd,
 
                 onOpenMoreMenu = onOpenMoreMenu,
                 onBalanceClick = onBalanceClick,
@@ -477,3 +492,8 @@ fun HomeUiTest(isDark: Boolean) {
         PreviewHomeTab(isDark)
     }
 }
+
+/**
+ * Before the 4th there is too little of the month spent for a projection to mean anything.
+ */
+private const val PROJECTION_FIRST_DAY = 4

@@ -28,6 +28,9 @@ object DatastoreKeys {
      */
     val SMS_IMPORT_FROM_EPOCH_MS = longPreferencesKey("sms_import_from_epoch_ms")
 
+    // Quick add from a notification
+    val QUICK_ADD_NOTIFICATION_ENABLED = booleanPreferencesKey("quick_add_notification_enabled")
+
     // Cloud sync (Supabase)
     val CLOUD_SYNC_ENABLED = booleanPreferencesKey("cloud_sync_enabled")
     val CLOUD_SYNC_SUPABASE_URL = stringPreferencesKey("cloud_sync_supabase_url")

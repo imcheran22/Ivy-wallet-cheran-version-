@@ -97,6 +97,7 @@
     <string name="hi_name">Hi %1$s</string>
     <string name="cashflow">Cashflow: %1$s%2$s %3$s</string>
     <string name="spent_today">Spent today: %1$s %2$s</string>
+    <string name="at_this_rate">At this rate: %1$s %2$s by month end</string>
     <string name="search_transactions">Search transactions...</string>
     <string name="savings_goal">Savings goal</string>
     <string name="quick_access">Quick access</string>

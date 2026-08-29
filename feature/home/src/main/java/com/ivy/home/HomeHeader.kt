@@ -223,6 +223,7 @@ fun CashFlowInfo(
     unsortedIncomeCount: Int,
     unsortedExpenseCount: Int,
     spentToday: Double,
+    projectedMonthEnd: Double,
     hideBalance: Boolean,
     hideIncome: Boolean,
     onHiddenIncomeClick: () -> Unit,
@@ -288,6 +289,25 @@ fun CashFlowInfo(
                 text = stringResource(
                     R.string.spent_today,
                     spentToday.format(currency),
+                    currency,
+                ),
+                style = UI.typo.nB2.style(color = Gray),
+            )
+        }
+
+        // Spending pace. The period total says what has gone; this says where it
+        // ends up if the rest of the month carries on like the part already spent,
+        // which is the number that can still be acted on.
+        if (projectedMonthEnd > 0.0 && !hideBalance) {
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                modifier = Modifier
+                    .padding(start = 24.dp)
+                    .testTag("home_projected_month_end"),
+                text = stringResource(
+                    R.string.at_this_rate,
+                    projectedMonthEnd.format(currency),
                     currency,
                 ),
                 style = UI.typo.nB2.style(color = Gray),

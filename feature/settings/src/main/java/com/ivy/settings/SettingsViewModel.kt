@@ -30,6 +30,7 @@ import com.ivy.domain.RootScreen
 import com.ivy.domain.sync.CloudSyncTrigger
 import com.ivy.domain.usecase.csv.ExportCsvUseCase
 import com.ivy.domain.usecase.exchange.SyncExchangeRatesUseCase
+import com.ivy.domain.quickadd.QuickAddNotifier
 import com.ivy.domain.usecase.sms.DeviceSmsReader
 import com.ivy.domain.usecase.sms.SmsCaptureLog
 import com.ivy.domain.usecase.sms.SmsCatchUpUseCase
@@ -75,6 +76,7 @@ class SettingsViewModel @Inject constructor(
     private val cloudSyncSettings: CloudSyncSettings,
     private val cloudSyncRepository: CloudSyncRepository,
     private val cloudSyncTrigger: CloudSyncTrigger,
+    private val quickAddNotifier: QuickAddNotifier,
     private val smsCaptureLog: SmsCaptureLog,
     private val smsCatchUpUseCase: SmsCatchUpUseCase,
     private val deviceSmsReader: DeviceSmsReader,
@@ -92,6 +94,7 @@ class SettingsViewModel @Inject constructor(
     private val startDateOfMonth = mutableIntStateOf(1)
     private val progressState = mutableStateOf(false)
     private val smsAutoImportEnabled = mutableStateOf(false)
+    private val quickAddNotificationEnabled = mutableStateOf(false)
     private val cloudSyncEnabled = mutableStateOf(false)
     private val cloudSyncSupabaseUrl = mutableStateOf("")
     private val cloudSyncSupabaseAnonKey = mutableStateOf("")
@@ -119,6 +122,7 @@ class SettingsViewModel @Inject constructor(
             hideIncome = getHideIncome(),
             languageOptionVisible = isLanguageOptionVisible(),
             smsAutoImportEnabled = smsAutoImportEnabled.value,
+            quickAddNotificationEnabled = quickAddNotificationEnabled.value,
             cloudSyncEnabled = cloudSyncEnabled.value,
             cloudSyncSupabaseUrl = cloudSyncSupabaseUrl.value,
             cloudSyncSupabaseAnonKey = cloudSyncSupabaseAnonKey.value,
@@ -140,12 +144,31 @@ class SettingsViewModel @Inject constructor(
         initializeTransfersAsIncomeExpense()
         initializeStartDateOfMonth()
         initializeSmsAutoImport()
+        initializeQuickAdd()
         initializeCloudSync()
     }
 
     private suspend fun initializeSmsAutoImport() {
         smsAutoImportEnabled.value = dataStore.data.first()[DatastoreKeys.SMS_AUTO_IMPORT_ENABLED] ?: false
         refreshSmsCaptureSummary()
+    }
+
+    private suspend fun initializeQuickAdd() {
+        quickAddNotificationEnabled.value =
+            dataStore.data.first()[DatastoreKeys.QUICK_ADD_NOTIFICATION_ENABLED] ?: false
+    }
+
+    /**
+     * The notification is posted and removed here rather than on next launch: a switch whose
+     * effect only appears after a restart reads as a switch that does not work.
+     */
+    private fun setQuickAddNotificationEnabled(enabled: Boolean) {
+        quickAddNotificationEnabled.value = enabled
+
+        viewModelScope.launch {
+            dataStore.edit { it[DatastoreKeys.QUICK_ADD_NOTIFICATION_ENABLED] = enabled }
+            if (enabled) quickAddNotifier.show() else quickAddNotifier.hide()
+        }
     }
 
     private suspend fun refreshSmsCaptureSummary(sweeping: Boolean = false) {
@@ -313,6 +336,8 @@ class SettingsViewModel @Inject constructor(
 
             is SettingsEvent.SetSmsAutoImportEnabled -> setSmsAutoImportEnabled(event.enabled)
             SettingsEvent.CatchUpOnSms -> catchUpOnSms()
+            is SettingsEvent.SetQuickAddNotificationEnabled ->
+                setQuickAddNotificationEnabled(event.enabled)
             is SettingsEvent.SetSmsImportFrom -> setSmsImportFrom(event.date)
             is SettingsEvent.SetCloudSyncEnabled -> setCloudSyncEnabled(event.enabled)
             is SettingsEvent.SetCloudSyncCredentials -> setCloudSyncCredentials(

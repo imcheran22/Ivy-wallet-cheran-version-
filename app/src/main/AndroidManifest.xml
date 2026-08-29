@@ -98,6 +98,10 @@
         </receiver>
 
         <receiver
+            android:name=".quickadd.QuickAddReplyReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".sms.SmsReceiver"
             android:exported="true"
             android:permission="android.permission.BROADCAST_SMS">

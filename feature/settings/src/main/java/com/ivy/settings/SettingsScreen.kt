@@ -157,6 +157,10 @@ fun BoxWithConstraintsScope.SettingsScreen() {
         onSetSmsAutoImportEnabled = {
             viewModel.onEvent(SettingsEvent.SetSmsAutoImportEnabled(it))
         },
+        quickAddNotificationEnabled = uiState.quickAddNotificationEnabled,
+        onSetQuickAddNotificationEnabled = {
+            viewModel.onEvent(SettingsEvent.SetQuickAddNotificationEnabled(it))
+        },
         onSetSmsImportFrom = {
             viewModel.onEvent(SettingsEvent.SetSmsImportFrom(it))
         },
@@ -208,6 +212,7 @@ private fun BoxWithConstraintsScope.UI(
     onDeleteCloudUserData: () -> Unit = {},
     onSwitchLanguage: () -> Unit = {},
     smsAutoImportEnabled: Boolean = false,
+    quickAddNotificationEnabled: Boolean = false,
     smsCapture: SmsCaptureSummary = SmsCaptureSummary(),
     cloudSyncEnabled: Boolean = false,
     cloudSyncSupabaseUrl: String = "",
@@ -217,6 +222,7 @@ private fun BoxWithConstraintsScope.UI(
     cloudSyncError: String? = null,
     onSetSmsAutoImportEnabled: (Boolean) -> Unit = {},
     onSetSmsImportFrom: (LocalDate) -> Unit = {},
+    onSetQuickAddNotificationEnabled: (Boolean) -> Unit = {},
     onCatchUpOnSms: () -> Unit = {},
     onSetCloudSyncEnabled: (Boolean) -> Unit = {},
     onSetCloudSyncCredentials: (String, String) -> Unit = { _, _ -> },
@@ -440,9 +446,21 @@ private fun BoxWithConstraintsScope.UI(
         }
 
         item {
-            SettingsSectionDivider(text = "SMS & cloud sync")
+            SettingsSectionDivider(text = "Capture & cloud sync")
 
             Spacer(Modifier.height(16.dp))
+
+            AppSwitch(
+                lockApp = quickAddNotificationEnabled,
+                onSetLockApp = onSetQuickAddNotificationEnabled,
+                text = "Quick add from a notification",
+                description = "Keeps a notification with a text box in your shade. Type " +
+                    "\"250 coffee\" and send - it is filed without opening the app or " +
+                    "unlocking the phone.",
+                icon = R.drawable.ic_notification_m
+            )
+
+            Spacer(Modifier.height(12.dp))
 
             SmsAutoImportSwitch(
                 enabled = smsAutoImportEnabled,
@@ -958,6 +976,9 @@ private const val MINUTES_PER_HOUR = 60L
 private const val MINUTES_PER_DAY = 1_440L
 private const val MINUTES_PER_WEEK = 10_080L
 
+/** Sync is scheduled hourly, so a day of silence means something is wrong, not quiet. */
+private const val STALE_SYNC_MILLIS = 24 * 60 * 60 * 1000L
+
 @Composable
 private fun CloudSyncSection(
     cloudSyncEnabled: Boolean,
@@ -1028,21 +1049,40 @@ private fun CloudSyncSection(
 
             Spacer(Modifier.height(8.dp))
 
-            val lastSyncedText = lastSyncedEpochMs?.let {
-                "Last synced: ${
-                    SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault()).format(Date(it))
-                }"
-            } ?: "Never synced yet"
-
+            // Sync runs in the background, so the only evidence it works is data
+            // appearing on another device - and when nothing appears there is no way to
+            // tell a quiet week from broken credentials. These lines say which it is.
             Text(
-                text = lastSyncedText,
+                text = "Last synced: ${relativeTimeLabel(lastSyncedEpochMs)}",
                 style = UI.typo.c.style(color = Gray)
             )
+
+            val warning = when {
+                supabaseUrl.isBlank() || supabaseAnonKey.isBlank() ->
+                    "Sync is on but has no credentials yet - nothing is leaving this phone."
+
+                lastSyncedEpochMs == null ->
+                    "No sync has completed yet. Run one now to check the credentials work."
+
+                System.currentTimeMillis() - lastSyncedEpochMs > STALE_SYNC_MILLIS ->
+                    "Nothing has synced in over a day. That is longer than the hourly " +
+                        "schedule should allow."
+
+                else -> null
+            }
+
+            if (warning != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = warning,
+                    style = UI.typo.c.style(color = Orange, fontWeight = FontWeight.SemiBold)
+                )
+            }
 
             if (error != null) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = error,
+                    text = "Last error: $error",
                     style = UI.typo.c.style(color = Red)
                 )
             }

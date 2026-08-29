@@ -10,6 +10,12 @@ import com.ivy.base.legacy.stringRes
 import com.ivy.base.model.TransactionType
 import com.ivy.data.db.dao.read.SettingsDao
 import com.ivy.domain.usecase.sms.SmsCatchUpUseCase
+import com.ivy.wallet.budgetalert.BudgetAlertScheduler
+import com.ivy.wallet.quickadd.QuickAddNotification
+import com.ivy.data.datastore.DatastoreKeys
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import kotlinx.coroutines.flow.first
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.utils.ioThread
@@ -42,6 +48,9 @@ class RootViewModel @Inject constructor(
     private val transactionReminderLogic: TransactionReminderLogic,
     private val migrationsManager: MigrationsManager,
     private val smsCatchUpUseCase: SmsCatchUpUseCase,
+    private val quickAddNotification: QuickAddNotification,
+    private val budgetAlertScheduler: BudgetAlertScheduler,
+    private val dataStore: DataStore<Preferences>,
 ) : ViewModel() {
 
     companion object {
@@ -90,6 +99,17 @@ class RootViewModel @Inject constructor(
 
         viewModelScope.launch {
             migrationsManager.executeMigrations()
+        }
+
+        viewModelScope.launch {
+            // Notifications do not survive a reboot, so the quick-add control is re-posted
+            // whenever the app is opened - the one moment it is certain to be re-creatable.
+            val quickAddEnabled = dataStore.data.first()[
+                DatastoreKeys.QUICK_ADD_NOTIFICATION_ENABLED
+            ] ?: false
+            if (quickAddEnabled) quickAddNotification.show() else quickAddNotification.hide()
+
+            budgetAlertScheduler.schedule()
         }
 
         viewModelScope.launch {

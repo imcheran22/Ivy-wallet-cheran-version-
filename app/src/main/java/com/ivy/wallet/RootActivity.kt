@@ -98,9 +98,8 @@ class RootActivity : AppCompatActivity(), RootScreen {
      * Setting the activity's intent keeps the two in agreement for anything that reads it
      * later.
      */
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent ?: return
         setIntent(intent)
         viewModel.handleIntent(intent)
     }

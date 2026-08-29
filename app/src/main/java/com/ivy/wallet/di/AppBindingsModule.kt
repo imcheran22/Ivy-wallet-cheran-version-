@@ -1,8 +1,10 @@
 package com.ivy.wallet.di
 
 import com.ivy.domain.AppStarter
+import com.ivy.domain.quickadd.QuickAddNotifier
 import com.ivy.domain.sync.CloudSyncTrigger
 import com.ivy.wallet.IvyAppStarter
+import com.ivy.wallet.quickadd.QuickAddNotification
 import com.ivy.wallet.sync.CloudSyncSchedulerImpl
 import dagger.Binds
 import dagger.Module
@@ -17,4 +19,7 @@ abstract class AppBindingsModule {
 
     @Binds
     abstract fun cloudSyncTrigger(scheduler: CloudSyncSchedulerImpl): CloudSyncTrigger
+
+    @Binds
+    abstract fun quickAddNotifier(notification: QuickAddNotification): QuickAddNotifier
 }

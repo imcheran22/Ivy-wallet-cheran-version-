@@ -15,6 +15,7 @@ data class SettingsState(
     val progressState: Boolean,
     val languageOptionVisible: Boolean,
     val smsAutoImportEnabled: Boolean = false,
+    val quickAddNotificationEnabled: Boolean = false,
     val cloudSyncEnabled: Boolean = false,
     val cloudSyncSupabaseUrl: String = "",
     val cloudSyncSupabaseAnonKey: String = "",
