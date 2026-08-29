@@ -569,4 +569,22 @@
     <string name="your_share_remaining">Your share: %1$s %2$s</string>
     <string name="split_done">Split: %1$d transactions and %2$d loans created</string>
     <string name="split_too_large">The shares add up to the whole transaction - leave something as your own share.</string>
+    <!-- Data tools -->
+    <string name="data_tools">Data tools</string>
+    <string name="duplicates">Duplicates</string>
+    <string name="recategorize">Recategorize</string>
+    <string name="no_duplicates_found">No likely duplicates. Same amount, same account, minutes apart is what this looks for.</string>
+    <string name="possible_duplicate">%1$d transactions look like the same spend</string>
+    <string name="keep_this_one">Keep this one</string>
+    <string name="duplicates_removed">Removed %1$d duplicate transactions</string>
+    <string name="transactions_recategorized">Recategorized %1$d transactions</string>
+    <string name="only_uncategorized">Only uncategorized</string>
+    <string name="select_all">Select all</string>
+    <string name="clear">Clear</string>
+    <string name="selected_count">%1$d selected</string>
+    <string name="move_selected_to">Move selected to</string>
+    <string name="archive_explainer">Archiving keeps an account\'s history and balance but hides it from the pickers you use every day. Nothing is deleted.</string>
+    <string name="search">Search</string>
+    <string name="saved_filters">Saved filters</string>
+    <string name="save_filter">Save filter</string>
 </resources>

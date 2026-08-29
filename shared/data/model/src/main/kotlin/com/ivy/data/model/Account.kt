@@ -22,4 +22,9 @@ data class Account(
     // Last digits of the linked bank account/card number, used to match incoming
     // bank SMS notifications to this account for auto-import.
     val bankAccountSuffix: String? = null,
+    /**
+     * A closed account. Its transactions still count towards balances and history; it just
+     * stops appearing in the pickers you use every day.
+     */
+    val archived: Boolean = false,
 ) : Identifiable<AccountId>, Reorderable

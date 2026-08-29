@@ -3,6 +3,7 @@ package com.ivy.reports
 import com.ivy.base.legacy.TransactionHistoryItem
 import com.ivy.data.model.Category
 import com.ivy.data.model.Tag
+import com.ivy.domain.usecase.filters.SavedFilter
 import com.ivy.legacy.datamodel.Account
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -33,5 +34,7 @@ data class ReportScreenState(
     val showTransfersAsIncExpCheckbox: Boolean = false,
     val treatTransfersAsIncExp: Boolean = false,
     val allTags: ImmutableList<Tag> = persistentListOf(),
-    val showAccountColorsInTransactions: Boolean = false
+    val showAccountColorsInTransactions: Boolean = false,
+    /** Filters the user named and kept, so a routine question is one tap away. */
+    val savedFilters: ImmutableList<SavedFilter> = persistentListOf(),
 )

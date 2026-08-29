@@ -24,6 +24,7 @@ data class Account(
     val orderNum: Double = 0.0,
     val includeInBalance: Boolean = true,
     val bankAccountSuffix: String? = null,
+    val archived: Boolean = false,
 
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false,
@@ -38,6 +39,7 @@ data class Account(
         orderNum = orderNum,
         includeInBalance = includeInBalance,
         bankAccountSuffix = bankAccountSuffix,
+        archived = archived,
         isSynced = isSynced,
         isDeleted = isDeleted,
         id = id
@@ -58,6 +60,7 @@ data class Account(
                 includeInBalance = includeInBalance,
                 orderNum = orderNum,
                 bankAccountSuffix = bankAccountSuffix,
+                archived = archived,
             )
         }
     }

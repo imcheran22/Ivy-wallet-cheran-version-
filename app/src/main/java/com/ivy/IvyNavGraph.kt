@@ -24,6 +24,7 @@ import com.ivy.navigation.PartnerTransactionsScreen
 import com.ivy.navigation.BudgetScreen
 import com.ivy.navigation.CSVScreen
 import com.ivy.navigation.CategoriesScreen
+import com.ivy.navigation.DataToolsScreen
 import com.ivy.navigation.EditPlannedScreen
 import com.ivy.navigation.EditTransactionScreen
 import com.ivy.navigation.ExchangeRatesScreen
@@ -54,6 +55,7 @@ import com.ivy.search.SearchScreen
 import com.ivy.settings.SettingsScreen
 import com.ivy.insights.InsightsScreenImpl
 import com.ivy.insights.trips.TripsScreenImpl
+import com.ivy.settings.datatools.DataToolsScreenImpl
 import com.ivy.settings.quickadd.QuickAddSettingsScreenImpl
 import com.ivy.smsinbox.ui.SmsDiagnosticScreenImpl
 import com.ivy.smsinbox.ui.SmsInboxScreenImpl
@@ -97,5 +99,6 @@ fun BoxWithConstraintsScope.IvyNavGraph(screen: Screen?) {
         QuickAddSettingsScreen -> QuickAddSettingsScreenImpl()
         InsightsScreen -> InsightsScreenImpl()
         TripsScreen -> TripsScreenImpl()
+        DataToolsScreen -> DataToolsScreenImpl()
     }
 }

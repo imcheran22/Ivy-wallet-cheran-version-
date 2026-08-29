@@ -44,7 +44,10 @@ class QuickAddOptionsUseCase @Inject constructor(
 ) {
     suspend fun load(): QuickAddOptions = withContext(dispatchersProvider.io) {
         QuickAddOptions(
+            // Archived accounts stay out of the one-tap surfaces: those exist to be fast, and
+            // a closed account in the list is only ever a mis-tap waiting to happen.
             accounts = accountRepository.findAll()
+                .filterNot { it.archived }
                 .sortedBy { it.orderNum }
                 .map {
                     QuickAddAccountOption(

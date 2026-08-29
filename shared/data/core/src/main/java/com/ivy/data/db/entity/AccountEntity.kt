@@ -31,6 +31,10 @@ data class AccountEntity(
     @SerialName("bankAccountSuffix")
     val bankAccountSuffix: String? = null,
 
+    // A closed account: kept for its history, hidden from the pickers you use every day.
+    @SerialName("archived")
+    val archived: Boolean = false,
+
     @Deprecated("Obsolete field used for cloud sync. Can't be deleted because of backwards compatibility")
     @SerialName("isSynced")
     val isSynced: Boolean = false,

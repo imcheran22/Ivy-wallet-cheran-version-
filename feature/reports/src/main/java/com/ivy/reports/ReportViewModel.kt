@@ -35,6 +35,8 @@ import com.ivy.data.temp.migration.getValue
 import com.ivy.domain.RootScreen
 import com.ivy.domain.features.Features
 import com.ivy.domain.usecase.csv.ExportCsvUseCase
+import com.ivy.domain.usecase.filters.SavedFilter
+import com.ivy.domain.usecase.filters.SavedFilterStore
 import com.ivy.frp.filterSuspend
 import com.ivy.legacy.IvyWalletCtx
 import com.ivy.legacy.datamodel.Account
@@ -90,7 +92,8 @@ class ReportViewModel @Inject constructor(
     private val exportCsvUseCase: ExportCsvUseCase,
     private val timeProvider: TimeProvider,
     private val timeConverter: TimeConverter,
-    private val features: Features
+    private val features: Features,
+    private val savedFilterStore: SavedFilterStore,
 ) : ComposeViewModel<ReportScreenState, ReportScreenEvent>() {
     private val unSpecifiedCategory =
         Category(
@@ -126,6 +129,7 @@ class ReportViewModel @Inject constructor(
     private var showTransfersAsIncExpCheckbox by mutableStateOf(false)
     private var treatTransfersAsIncExp by mutableStateOf(false)
     private var allTags by mutableStateOf<ImmutableList<Tag>>(persistentListOf())
+    private var savedFilters by mutableStateOf<ImmutableList<SavedFilter>>(persistentListOf())
 
     private var tagSearchJob: Job? = null
     private val tagSearchDebounceTimeInMills: Long = 500
@@ -165,7 +169,8 @@ class ReportViewModel @Inject constructor(
             upcomingIncome = upcomingIncome,
             upcomingTransactions = upcomingTransactions,
             allTags = allTags,
-            showAccountColorsInTransactions = getShouldShowAccountSpecificColorInTransactions()
+            showAccountColorsInTransactions = getShouldShowAccountSpecificColorInTransactions(),
+            savedFilters = savedFilters,
         )
     }
 
@@ -188,6 +193,12 @@ class ReportViewModel @Inject constructor(
                 )
 
                 is ReportScreenEvent.OnTagSearch -> onTagSearch(event.data)
+                is ReportScreenEvent.OnSaveFilter -> saveCurrentFilter(event.name)
+                is ReportScreenEvent.OnApplySavedFilter -> applySavedFilter(event.id)
+                is ReportScreenEvent.OnDeleteSavedFilter -> {
+                    savedFilterStore.delete(event.id)
+                    loadSavedFilters()
+                }
             }
         }
     }
@@ -218,6 +229,7 @@ class ReportViewModel @Inject constructor(
             categories =
                 (listOf(unSpecifiedCategory) + categoryRepository.findAll()).toImmutableList()
             allTags = tagRepository.findAll().toImmutableList()
+            loadSavedFilters()
         }
     }
 
@@ -583,6 +595,65 @@ class ReportViewModel @Inject constructor(
                 setFilter(filter)
             }
         }
+    }
+
+    private suspend fun loadSavedFilters() {
+        savedFilters = runCatching { savedFilterStore.all() }
+            .getOrDefault(emptyList())
+            .toImmutableList()
+    }
+
+    /**
+     * Keeps the filter under a name, minus the period: "food, cash, this month" should mean
+     * *this* month every time it's used, not the month it was saved in.
+     */
+    private suspend fun saveCurrentFilter(name: String) {
+        val current = filter ?: return
+        if (name.isBlank()) return
+
+        savedFilterStore.save(
+            SavedFilter(
+                id = UUID.randomUUID(),
+                name = name.trim(),
+                trnTypes = current.trnTypes,
+                accountIds = current.accounts.map { it.id },
+                categoryIds = current.categories.map { it.id.value },
+                minAmount = current.minAmount,
+                maxAmount = current.maxAmount,
+                includeKeywords = current.includeKeywords,
+                excludeKeywords = current.excludeKeywords,
+            )
+        )
+        loadSavedFilters()
+    }
+
+    /**
+     * Rebuilds a filter from ids. Accounts and categories that no longer exist are dropped
+     * rather than failing the whole filter - a deleted category shouldn't cost you the filter.
+     */
+    private suspend fun applySavedFilter(id: UUID) {
+        val saved = savedFilterStore.findById(id) ?: return
+
+        val allAccounts = accountsAct(Unit)
+        val allCategories = categoryRepository.findAll().toImmutableList()
+
+        setFilter(
+            ReportFilter(
+                trnTypes = saved.trnTypes.ifEmpty { TransactionType.entries },
+                period = filter?.period ?: ivyContext.selectedPeriod,
+                accounts = allAccounts.filter { it.id in saved.accountIds }
+                    .ifEmpty { allAccounts },
+                categories = allCategories.filter { it.id.value in saved.categoryIds }
+                    .ifEmpty { allCategories + unSpecifiedCategory },
+                currency = baseCurrency,
+                minAmount = saved.minAmount,
+                maxAmount = saved.maxAmount,
+                includeKeywords = saved.includeKeywords,
+                excludeKeywords = saved.excludeKeywords,
+                includedTags = emptyList(),
+                excludedTags = emptyList(),
+            )
+        )
     }
 
     private fun setFilterOverlayVisibleValue(visible: Boolean) {

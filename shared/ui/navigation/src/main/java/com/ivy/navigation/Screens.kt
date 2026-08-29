@@ -169,3 +169,8 @@ data object InsightsScreen : Screen
  * Holidays and work trips: everything spent between two dates, totalled.
  */
 data object TripsScreen : Screen
+
+/**
+ * Duplicate detection, bulk recategorization and account archiving.
+ */
+data object DataToolsScreen : Screen

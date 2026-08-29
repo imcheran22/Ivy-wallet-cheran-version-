@@ -13,6 +13,9 @@ sealed class ReportScreenEvent {
     data class OnOverdueExpanded(val overdueExpanded: Boolean) : ReportScreenEvent()
     data class OnFilterOverlayVisible(val filterOverlayVisible: Boolean) : ReportScreenEvent()
     data class OnTagSearch(val data: String) : ReportScreenEvent()
+    data class OnSaveFilter(val name: String) : ReportScreenEvent()
+    data class OnApplySavedFilter(val id: java.util.UUID) : ReportScreenEvent()
+    data class OnDeleteSavedFilter(val id: java.util.UUID) : ReportScreenEvent()
     data class OnTreatTransfersAsIncomeExpense(val transfersAsIncomeExpense: Boolean) :
         ReportScreenEvent()
 

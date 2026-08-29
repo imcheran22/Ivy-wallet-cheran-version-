@@ -307,6 +307,16 @@ private fun BoxWithConstraintsScope.UI(
         },
         onTagSearch = {
             onEventHandler.invoke(ReportScreenEvent.OnTagSearch(data = it))
+        },
+        savedFilters = state.savedFilters,
+        onSaveFilter = {
+            onEventHandler.invoke(ReportScreenEvent.OnSaveFilter(name = it))
+        },
+        onApplySavedFilter = {
+            onEventHandler.invoke(ReportScreenEvent.OnApplySavedFilter(id = it))
+        },
+        onDeleteSavedFilter = {
+            onEventHandler.invoke(ReportScreenEvent.OnDeleteSavedFilter(id = it))
         }
     )
 }

@@ -29,6 +29,7 @@ class AccountMapper @Inject constructor(
             includeInBalance = includeInBalance,
             orderNum = orderNum,
             bankAccountSuffix = bankAccountSuffix,
+            archived = archived,
         )
     }
 
@@ -41,6 +42,7 @@ class AccountMapper @Inject constructor(
             orderNum = orderNum,
             includeInBalance = includeInBalance,
             bankAccountSuffix = bankAccountSuffix,
+            archived = archived,
             id = id.value,
             isSynced = true, // TODO: Delete this
         )

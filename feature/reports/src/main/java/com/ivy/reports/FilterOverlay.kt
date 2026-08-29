@@ -47,6 +47,7 @@ import com.ivy.data.model.primitive.ColorInt
 import com.ivy.data.model.primitive.IconAsset
 import com.ivy.data.model.primitive.NotBlankTrimmedString
 import com.ivy.design.api.LocalTimeConverter
+import com.ivy.domain.usecase.filters.SavedFilter
 import com.ivy.design.api.LocalTimeFormatter
 import com.ivy.design.api.LocalTimeProvider
 import com.ivy.design.l0_system.UI
@@ -80,6 +81,7 @@ import com.ivy.wallet.ui.theme.modal.AddKeywordModal
 import com.ivy.wallet.ui.theme.modal.AddModalBackHandling
 import com.ivy.wallet.ui.theme.modal.ChoosePeriodModal
 import com.ivy.wallet.ui.theme.modal.ChoosePeriodModalData
+import com.ivy.wallet.ui.theme.modal.NameModal
 import com.ivy.wallet.ui.theme.modal.edit.AmountModal
 import com.ivy.wallet.ui.theme.toComposeColor
 import com.ivy.wallet.ui.theme.wallet.AmountCurrencyB1Row
@@ -104,8 +106,13 @@ fun BoxWithConstraintsScope.FilterOverlay(
     filter: ReportFilter?,
     onClose: () -> Unit,
     onSetFilter: (ReportFilter?) -> Unit,
-    onTagSearch: (String) -> Unit
+    onTagSearch: (String) -> Unit,
+    savedFilters: ImmutableList<SavedFilter> = persistentListOf(),
+    onSaveFilter: (String) -> Unit = {},
+    onApplySavedFilter: (UUID) -> Unit = {},
+    onDeleteSavedFilter: (UUID) -> Unit = {}
 ) {
+    var saveFilterModalVisible by remember { mutableStateOf(false) }
     val percentVisible by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
         animationSpec = springBounce()
@@ -212,6 +219,19 @@ fun BoxWithConstraintsScope.FilterOverlay(
             }
 
             Spacer(Modifier.height(24.dp))
+
+            SavedFiltersRow(
+                savedFilters = savedFilters,
+                canSave = localFilter != null,
+                onApply = {
+                    onApplySavedFilter(it)
+                    onClose()
+                },
+                onDelete = onDeleteSavedFilter,
+                onSaveCurrent = { saveFilterModalVisible = true }
+            )
+
+            Spacer(Modifier.height(8.dp))
 
             TypeFilter(
                 filter = localFilter,
@@ -329,6 +349,15 @@ fun BoxWithConstraintsScope.FilterOverlay(
             alpha = percentVisible,
             zIndex = 150f
         )
+    }
+
+    NameModal(
+        visible = saveFilterModalVisible,
+        name = "",
+        dismiss = { saveFilterModalVisible = false },
+    ) { name ->
+        onSaveFilter(name)
+        saveFilterModalVisible = false
     }
 
     ChoosePeriodModal(
@@ -1117,5 +1146,72 @@ private fun Preview() {
             },
             onTagSearch = { }
         )
+    }
+}
+
+/**
+ * The filters the user named, one tap away.
+ *
+ * A report filter is half a dozen decisions; asking for all six again every time is why people
+ * stop using reports. Tapping a saved one applies it and closes the overlay, because the point
+ * is to get to the answer.
+ */
+@Composable
+private fun SavedFiltersRow(
+    savedFilters: ImmutableList<SavedFilter>,
+    canSave: Boolean,
+    onApply: (UUID) -> Unit,
+    onDelete: (UUID) -> Unit,
+    onSaveCurrent: () -> Unit,
+) {
+    if (savedFilters.isEmpty() && !canSave) return
+
+    Column {
+        FilterTitleText(
+            text = stringResource(R.string.saved_filters),
+            active = savedFilters.isNotEmpty(),
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            item {
+                Spacer(Modifier.width(24.dp))
+            }
+
+            items(savedFilters) { saved ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IvyOutlinedButton(
+                        text = saved.name,
+                        iconStart = R.drawable.ic_filter_xs,
+                        onClick = { onApply(saved.id) },
+                    )
+                    Text(
+                        modifier = Modifier
+                            .clickable { onDelete(saved.id) }
+                            .padding(all = 8.dp),
+                        text = "\u00d7",
+                        style = UI.typo.b1.style(
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+            }
+
+            if (canSave) {
+                item {
+                    IvyOutlinedButton(
+                        text = stringResource(R.string.save_filter),
+                        iconStart = R.drawable.ic_plus,
+                        onClick = onSaveCurrent,
+                    )
+                    Spacer(Modifier.width(24.dp))
+                }
+            }
+        }
     }
 }

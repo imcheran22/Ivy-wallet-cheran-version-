@@ -56,6 +56,7 @@ import com.ivy.legacy.rootScreen
 import com.ivy.legacy.utils.drawColoredShadow
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
+import com.ivy.navigation.DataToolsScreen
 import com.ivy.navigation.ImportScreen
 import com.ivy.navigation.InsightsScreen
 import com.ivy.navigation.TripsScreen
@@ -463,6 +464,16 @@ private fun BoxWithConstraintsScope.UI(
                 description = "Everything spent between two dates, totalled - in your currency " +
                     "and in the one you actually spent.",
                 onClick = { nav.navigateTo(TripsScreen) }
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_tools_m,
+                text = stringResource(R.string.data_tools),
+                description = "Find duplicate transactions, recategorize in bulk and archive " +
+                    "accounts you have closed.",
+                onClick = { nav.navigateTo(DataToolsScreen) }
             )
         }
 
