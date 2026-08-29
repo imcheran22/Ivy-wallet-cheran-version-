@@ -135,6 +135,11 @@ data object ExchangeRatesScreen : Screen {
 }
 
 /**
+ * The shared pot: one account two people spend from, and the monthly limit they agreed on.
+ */
+data object SharedPotScreen : Screen
+
+/**
  * The sorting queue: auto-imported transactions waiting to be told what they were for.
  */
 data object SmsInboxScreen : Screen

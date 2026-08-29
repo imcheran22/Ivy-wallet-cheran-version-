@@ -67,6 +67,7 @@ import com.ivy.navigation.LoansScreen
 import com.ivy.navigation.PlannedPaymentsScreen
 import com.ivy.navigation.ReportScreen
 import com.ivy.navigation.SearchScreen
+import com.ivy.navigation.SharedPotScreen
 import com.ivy.navigation.SettingsScreen
 import com.ivy.navigation.navigation
 import com.ivy.ui.R
@@ -465,6 +466,25 @@ private fun QuickAccess(
                 label = stringResource(R.string.loans),
             ) {
                 nav.navigateTo(LoansScreen)
+            }
+
+            Spacer(Modifier.weight(1f))
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.Top
+        ) {
+            Spacer(Modifier.weight(1f))
+
+            MoreMenuButton(
+                icon = R.drawable.home_more_menu_budgets,
+                label = "Shared pot",
+            ) {
+                nav.navigateTo(SharedPotScreen)
             }
 
             Spacer(Modifier.weight(1f))

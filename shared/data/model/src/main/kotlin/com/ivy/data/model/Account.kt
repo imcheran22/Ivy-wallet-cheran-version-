@@ -19,7 +19,7 @@ data class Account(
     val icon: IconAsset?,
     val includeInBalance: Boolean,
     override val orderNum: Double,
-    // Retired: last digits of the linked bank account/card number. Kept so the persisted
-    // schema (DB v131) still round-trips; nothing reads it any more.
+    // Last digits of the linked bank account or card. The SMS importer matches an incoming
+    // bank alert against this to decide which account the transaction belongs to.
     val bankAccountSuffix: String? = null,
 ) : Identifiable<AccountId>, Reorderable

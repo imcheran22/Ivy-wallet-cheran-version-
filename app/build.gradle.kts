@@ -177,6 +177,7 @@ dependencies {
     implementation(projects.feature.reports)
     implementation(projects.feature.search)
     implementation(projects.feature.settings)
+    implementation(projects.feature.sharedPot)
     implementation(projects.feature.smsInbox)
     implementation(projects.feature.transactions)
     implementation(projects.shared.base)
