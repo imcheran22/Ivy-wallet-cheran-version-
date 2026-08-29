@@ -17,10 +17,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,6 +36,9 @@ import androidx.compose.ui.unit.dp
 import com.ivy.domain.usecase.insights.CategorySpend
 import com.ivy.domain.usecase.insights.NetWorthPoint
 import com.ivy.domain.usecase.insights.PayeeTotal
+import com.ivy.domain.usecase.recurring.RecurringCandidate
+import com.ivy.legacy.ivyWalletCtx
+import com.ivy.legacy.rootScreen
 import com.ivy.legacy.utils.format
 import com.ivy.navigation.navigation
 import com.ivy.navigation.screenScopedViewModel
@@ -50,16 +56,24 @@ fun InsightsScreenImpl(
     viewModel: InsightsViewModel = screenScopedViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    InsightsUi(state = state)
+    val rootScreen = rootScreen()
+
+    LaunchedEffect(Unit) {
+        viewModel.pdfReady.collect { uri -> rootScreen.sharePdfFile(uri) }
+    }
+
+    InsightsUi(state = state, onEvent = viewModel::onEvent)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InsightsUi(
     state: InsightsState,
+    onEvent: (InsightsEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val nav = navigation()
+    val ivyContext = ivyWalletCtx()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -112,6 +126,43 @@ private fun InsightsUi(
                 item { SectionTitle(stringResource(R.string.top_payees)) }
                 items(state.topPayees.size) { index ->
                     PayeeRow(payee = state.topPayees[index], currency = state.currency)
+                }
+            }
+
+            item { SectionTitle(stringResource(R.string.recurring_payments)) }
+
+            if (state.recurring.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.no_recurring_detected),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                items(state.recurring.size) { index ->
+                    val candidate = state.recurring[index]
+                    RecurringRow(
+                        candidate = candidate,
+                        tracked = candidate.payee in state.trackedPayees,
+                        onTrack = { onEvent(InsightsEvent.TrackRecurring(candidate)) },
+                    )
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    enabled = !state.exporting,
+                    onClick = {
+                        ivyContext.createNewFile(
+                            "IvyStatement_${state.periodLabel.replace(' ', '_')}.pdf"
+                        ) { uri ->
+                            onEvent(InsightsEvent.ExportPdf(uri))
+                        }
+                    },
+                ) {
+                    Text(stringResource(R.string.export_month_pdf))
                 }
             }
 
@@ -335,6 +386,52 @@ private fun PayeeRow(payee: PayeeTotal, currency: String) {
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold,
         )
+    }
+}
+
+/**
+ * A payment that keeps coming back, with the one thing to do about it: let the app expect it.
+ */
+@Composable
+private fun RecurringRow(
+    candidate: RecurringCandidate,
+    tracked: Boolean,
+    onTrack: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = candidate.payee,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = stringResource(
+                    R.string.recurring_payment_detail,
+                    "${candidate.typicalAmount.format(candidate.assetCode)} " +
+                        candidate.assetCode,
+                    candidate.occurrences,
+                    candidate.intervalDays,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        if (tracked) {
+            Text(
+                text = stringResource(R.string.tracked_payment),
+                style = MaterialTheme.typography.bodySmall,
+                color = Green,
+                fontWeight = FontWeight.SemiBold,
+            )
+        } else {
+            TextButton(onClick = onTrack) { Text(stringResource(R.string.track_payment)) }
+        }
     }
 }
 

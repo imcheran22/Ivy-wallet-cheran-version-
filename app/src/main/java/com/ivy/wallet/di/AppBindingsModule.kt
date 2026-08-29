@@ -1,11 +1,13 @@
 package com.ivy.wallet.di
 
 import com.ivy.domain.AppStarter
+import com.ivy.domain.BackupController
 import com.ivy.domain.NotificationController
 import com.ivy.domain.WidgetRefresher
 import com.ivy.domain.sync.CloudSyncTrigger
 import com.ivy.wallet.IvyAppStarter
 import com.ivy.wallet.sync.CloudSyncSchedulerImpl
+import com.ivy.wallet.backup.AutoBackupScheduler
 import com.ivy.wallet.quickadd.notification.IvyNotificationController
 import com.ivy.wallet.widget.IvyWidgetRefresher
 import dagger.Binds
@@ -29,4 +31,7 @@ abstract class AppBindingsModule {
     abstract fun notificationController(
         controller: IvyNotificationController
     ): NotificationController
+
+    @Binds
+    abstract fun backupController(scheduler: AutoBackupScheduler): BackupController
 }

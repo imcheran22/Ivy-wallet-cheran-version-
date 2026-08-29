@@ -24,6 +24,8 @@ interface RootScreen {
 
     fun shareZipFile(fileUri: Uri)
 
+    fun sharePdfFile(fileUri: Uri)
+
     fun openGooglePlayAppPage(appId: String)
 
     fun <T> pinWidget(widget: Class<T>)

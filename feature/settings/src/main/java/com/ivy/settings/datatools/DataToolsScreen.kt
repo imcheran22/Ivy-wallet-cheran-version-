@@ -22,6 +22,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -99,7 +100,8 @@ private fun DataToolsUi(
                 state.loading -> Loading()
                 state.tab == DataToolsTab.DUPLICATES -> DuplicatesTab(state, onEvent)
                 state.tab == DataToolsTab.RECATEGORIZE -> RecategorizeTab(state, onEvent)
-                else -> AccountsTab(state, onEvent)
+                state.tab == DataToolsTab.ACCOUNTS -> AccountsTab(state, onEvent)
+                else -> BackupsTab(state, onEvent)
             }
         }
     }
@@ -367,6 +369,59 @@ private fun AccountRow(account: ArchivableAccount, onEvent: (DataToolsEvent) -> 
     }
 }
 
+/**
+ * Automatic backups, and the only two facts about them that matter: whether they are on, and
+ * when the last one actually happened.
+ */
+@Composable
+private fun BackupsTab(state: DataToolsState, onEvent: (DataToolsEvent) -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.automatic_backups),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    text = stringResource(R.string.automatic_backups_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = state.autoBackupEnabled,
+                onCheckedChange = { onEvent(DataToolsEvent.SetAutoBackup(it)) },
+            )
+        }
+
+        Text(
+            text = state.lastBackupEpochMs?.let {
+                stringResource(R.string.last_backup, formatTimestamp(it))
+            } ?: stringResource(R.string.no_backup_yet),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+
+        state.lastBackupResult?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        OutlinedButton(onClick = { onEvent(DataToolsEvent.BackUpNow) }) {
+            Text(stringResource(R.string.back_up_now))
+        }
+    }
+}
+
+private fun formatTimestamp(epochMs: Long): String =
+    java.text.SimpleDateFormat("d MMM, HH:mm", java.util.Locale.getDefault())
+        .format(java.util.Date(epochMs))
+
 @Composable
 private fun EmptyMessage(text: String) {
     Column(
@@ -384,5 +439,6 @@ private fun tabLabel(tab: DataToolsTab): String = stringResource(
         DataToolsTab.DUPLICATES -> R.string.duplicates
         DataToolsTab.RECATEGORIZE -> R.string.recategorize
         DataToolsTab.ACCOUNTS -> R.string.accounts
+        DataToolsTab.BACKUPS -> R.string.backups
     }
 )

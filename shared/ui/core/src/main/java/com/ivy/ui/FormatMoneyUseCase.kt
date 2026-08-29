@@ -12,6 +12,12 @@ import kotlin.math.abs
 const val THOUSAND = 1_000
 const val MILLION = 1_000_000
 const val BILLION = 1_000_000_000
+const val LAKH = 100_000
+const val CRORE = 10_000_000
+private const val INDIA_COUNTRY_CODE = "IN"
+
+private fun usesIndianNumbering(): Boolean =
+    java.util.Locale.getDefault().country == INDIA_COUNTRY_CODE
 
 class FormatMoneyUseCase @Inject constructor(
     private val features: Features,
@@ -26,7 +32,15 @@ class FormatMoneyUseCase @Inject constructor(
 
     suspend fun format(value: Double, shortenAmount: Boolean): String {
         if (abs(value) >= THOUSAND && shortenAmount) {
-            val result = if (abs(value) >= BILLION) {
+            // Where money is spoken in lakhs and crores, "12.3m" is a number you have to
+            // convert before you can read it.
+            val result = if (usesIndianNumbering()) {
+                when {
+                    abs(value) >= CRORE -> "${shortenAmountFormatter.format(value / CRORE)}cr"
+                    abs(value) >= LAKH -> "${shortenAmountFormatter.format(value / LAKH)}L"
+                    else -> "${shortenAmountFormatter.format(value / THOUSAND)}k"
+                }
+            } else if (abs(value) >= BILLION) {
                 "${shortenAmountFormatter.format(value / BILLION)}b"
             } else if (abs(value) >= MILLION) {
                 "${shortenAmountFormatter.format(value / MILLION)}m"

@@ -12,6 +12,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.ivy.data.datastore.DatastoreKeys
 import com.ivy.data.db.dao.read.SettingsDao
+import com.ivy.domain.BackupController
 import com.ivy.domain.usecase.sms.SmsCatchUpUseCase
 import com.ivy.frp.test.TestIdlingResource
 import com.ivy.legacy.IvyWalletCtx
@@ -56,6 +57,7 @@ class RootViewModel @Inject constructor(
     private val quickAddNotificationManager: QuickAddNotificationManager,
     private val dailySummaryScheduler: DailySummaryScheduler,
     private val dataStore: DataStore<Preferences>,
+    private val backupController: BackupController,
 ) : ViewModel() {
 
     companion object {
@@ -128,6 +130,9 @@ class RootViewModel @Inject constructor(
             runCatching { quickAddNotificationManager.refresh() }
                 .onFailure { Timber.w(it, "Failed to refresh the quick-add notification") }
             dailySummaryScheduler.schedule()
+            // The worker no-ops when backups are off, so re-asserting the schedule on every
+            // open is how it survives a force-stop or an app update.
+            backupController.schedule()
         }
 
         viewModelScope.launch {

@@ -3,6 +3,7 @@ package com.ivy.legacy.utils
 import com.ivy.wallet.domain.data.IvyCurrency
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.log10
 import kotlin.math.truncate
@@ -10,6 +11,14 @@ import kotlin.math.truncate
 const val MILLION = 1000000
 const val N_100K = 100000
 const val THOUSAND = 1000
+
+/** 1,00,000 - the unit people actually use where Indian numbering is spoken. */
+const val LAKH = 100_000
+
+/** 1,00,00,000. */
+const val CRORE = 10_000_000
+
+private const val INDIA_COUNTRY_CODE = "IN"
 
 fun String.amountToDoubleOrNull(): Double? {
     return this.normalizeAmount().toDoubleOrNull()
@@ -93,9 +102,31 @@ fun Double.formatCrypto(): String {
     }
 }
 
-private fun Double.formatFIAT(): String = DecimalFormat("#,##0.00").format(this)
+private fun Double.formatFIAT(): String = DecimalFormat(fiatPattern()).format(this)
+
+/**
+ * Indian grouping puts separators every two digits after the first three - 12,34,567.89, not
+ * 1,234,567.89 - and the difference is not cosmetic: someone who reads in lakhs has to count
+ * digits to read a Western-grouped number.
+ */
+private fun fiatPattern(): String = if (usesIndianNumbering()) "#,##,##0.00" else "#,##0.00"
+
+/**
+ * True where money is spoken in lakhs and crores. Follows the device locale rather than the
+ * wallet's currency: it is the person reading the number who groups it, not the money.
+ */
+fun usesIndianNumbering(): Boolean = Locale.getDefault().country == INDIA_COUNTRY_CODE
 
 fun shortenAmount(amount: Double): String {
+    if (usesIndianNumbering()) {
+        return when {
+            abs(amount) >= CRORE -> formatShortenedNumber(amount / CRORE, "cr")
+            abs(amount) >= LAKH -> formatShortenedNumber(amount / LAKH, "L")
+            abs(amount) >= THOUSAND -> formatShortenedNumber(amount / THOUSAND, "k")
+            else -> amount.toString()
+        }
+    }
+
     return when {
         abs(amount) >= MILLION -> {
             formatShortenedNumber(amount / MILLION, "m")
@@ -131,7 +162,8 @@ fun shouldShortAmount(amount: Double): Boolean {
 }
 
 fun formatInt(number: Int): String {
-    return DecimalFormat("#,###,###,###").format(number)
+    val pattern = if (usesIndianNumbering()) "#,##,##,##,###" else "#,###,###,###"
+    return DecimalFormat(pattern).format(number)
 }
 
 fun decimalPartFormatted(currency: String, value: Double): String {

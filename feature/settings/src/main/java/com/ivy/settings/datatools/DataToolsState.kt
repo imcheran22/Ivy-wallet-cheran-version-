@@ -12,7 +12,7 @@ import kotlinx.collections.immutable.persistentSetOf
 import java.util.UUID
 
 enum class DataToolsTab {
-    DUPLICATES, RECATEGORIZE, ACCOUNTS
+    DUPLICATES, RECATEGORIZE, ACCOUNTS, BACKUPS
 }
 
 @Immutable
@@ -27,6 +27,9 @@ data class DataToolsState(
     val query: String = "",
     val accounts: ImmutableList<ArchivableAccount> = persistentListOf(),
     val message: DataToolsMessage? = null,
+    val autoBackupEnabled: Boolean = false,
+    val lastBackupEpochMs: Long? = null,
+    val lastBackupResult: String? = null,
 )
 
 /** Something that just happened, said in words the screen can render. */
@@ -46,4 +49,6 @@ sealed interface DataToolsEvent {
     data class ApplyCategory(val categoryId: UUID?) : DataToolsEvent
     data class SetArchived(val accountId: UUID, val archived: Boolean) : DataToolsEvent
     data object DismissMessage : DataToolsEvent
+    data class SetAutoBackup(val enabled: Boolean) : DataToolsEvent
+    data object BackUpNow : DataToolsEvent
 }

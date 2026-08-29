@@ -438,6 +438,18 @@ class RootActivity : AppCompatActivity(), RootScreen {
         startActivity(intent)
     }
 
+    override fun sharePdfFile(fileUri: Uri) {
+        val intent = Intent.createChooser(
+            Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_STREAM, fileUri)
+                type = "application/pdf"
+            },
+            null
+        )
+        startActivity(intent)
+    }
+
     override fun shareZipFile(fileUri: Uri) {
         val intent = Intent.createChooser(
             Intent().apply {

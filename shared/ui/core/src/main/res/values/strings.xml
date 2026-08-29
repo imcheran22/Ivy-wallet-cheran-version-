@@ -614,4 +614,15 @@
     <string name="restore_preview_empty">There is nothing in the cloud yet, so there is nothing to restore.</string>
     <string name="restore_preview_counts">%1$d in cloud / %2$d here</string>
     <string name="transactions_title">Transactions</string>
+    <string name="backups">Backups</string>
+    <string name="automatic_backups">Automatic backups</string>
+    <string name="automatic_backups_description">A full backup written daily to the app\'s own folder, keeping the last seven. The manual backup needs you to remember; this one doesn\'t.</string>
+    <string name="last_backup">Last backup %1$s</string>
+    <string name="no_backup_yet">No automatic backup yet</string>
+    <string name="back_up_now">Back up now</string>
+    <string name="recurring_payment_detail">%1$s · seen %2$d times · about every %3$d days</string>
+    <string name="track_payment">Track it</string>
+    <string name="tracked_payment">Tracked</string>
+    <string name="export_month_pdf">Export this month as PDF</string>
+    <string name="no_recurring_detected">Nothing recurring detected yet. Three sightings of the same payee, at a steady interval, is what this looks for.</string>
 </resources>

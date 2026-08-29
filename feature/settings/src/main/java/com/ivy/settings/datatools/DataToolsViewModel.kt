@@ -2,6 +2,11 @@ package com.ivy.settings.datatools
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import com.ivy.data.datastore.DatastoreKeys
+import com.ivy.domain.BackupController
 import com.ivy.domain.usecase.datatools.AccountArchiveUseCase
 import com.ivy.domain.usecase.datatools.BulkEditUseCase
 import com.ivy.domain.usecase.datatools.BulkFilter
@@ -14,6 +19,7 @@ import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -25,6 +31,8 @@ class DataToolsViewModel @Inject constructor(
     private val bulkEditUseCase: BulkEditUseCase,
     private val accountArchiveUseCase: AccountArchiveUseCase,
     private val optionsUseCase: QuickAddOptionsUseCase,
+    private val backupController: BackupController,
+    private val dataStore: DataStore<Preferences>,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DataToolsState())
@@ -68,6 +76,8 @@ class DataToolsViewModel @Inject constructor(
             is DataToolsEvent.ApplyCategory -> applyCategory(event.categoryId)
             is DataToolsEvent.SetArchived -> setArchived(event.accountId, event.archived)
             DataToolsEvent.DismissMessage -> _state.update { it.copy(message = null) }
+            is DataToolsEvent.SetAutoBackup -> setAutoBackup(event.enabled)
+            DataToolsEvent.BackUpNow -> backupController.backUpNow()
         }
     }
 
@@ -78,6 +88,7 @@ class DataToolsViewModel @Inject constructor(
                 DataToolsTab.DUPLICATES -> loadDuplicates()
                 DataToolsTab.RECATEGORIZE -> loadRows()
                 DataToolsTab.ACCOUNTS -> loadAccounts()
+                DataToolsTab.BACKUPS -> loadBackupState()
             }
         }
     }
@@ -111,6 +122,33 @@ class DataToolsViewModel @Inject constructor(
         viewModelScope.launch {
             accountArchiveUseCase.setArchived(accountId, archived)
             loadAccounts()
+        }
+    }
+
+    private fun setAutoBackup(enabled: Boolean) {
+        _state.update { it.copy(autoBackupEnabled = enabled) }
+        viewModelScope.launch {
+            dataStore.edit { it[DatastoreKeys.AUTO_BACKUP_ENABLED] = enabled }
+            if (enabled) {
+                backupController.schedule()
+                // Take one straight away: an automatic backup that starts tomorrow is no
+                // comfort to someone who just decided they wanted backups.
+                backupController.backUpNow()
+            } else {
+                backupController.cancel()
+            }
+        }
+    }
+
+    private suspend fun loadBackupState() {
+        val prefs = dataStore.data.first()
+        _state.update {
+            it.copy(
+                loading = false,
+                autoBackupEnabled = prefs[DatastoreKeys.AUTO_BACKUP_ENABLED] ?: false,
+                lastBackupEpochMs = prefs[DatastoreKeys.AUTO_BACKUP_LAST_RUN_EPOCH_MS],
+                lastBackupResult = prefs[DatastoreKeys.AUTO_BACKUP_LAST_RESULT],
+            )
         }
     }
 
