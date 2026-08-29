@@ -102,6 +102,23 @@ class RootViewModel @Inject constructor(
         }
     }
 
+    /**
+     * The launch intent arriving at an app that is already running.
+     *
+     * [start] only sees the intent an activity was created with, so with the app warm in
+     * memory the Quick Settings tile and the launcher shortcuts used to land on whatever
+     * screen was already open - looking, from the outside, like the tile was broken.
+     */
+    fun handleIntent(intent: Intent) {
+        viewModelScope.launch {
+            ioThread {
+                if (isOnboardingCompleted()) {
+                    handleSpecialStart(intent)
+                }
+            }
+        }
+    }
+
     private fun navigateOnboardedUser(intent: Intent) {
         if (!handleSpecialStart(intent)) {
             nav.navigateTo(MainScreen)

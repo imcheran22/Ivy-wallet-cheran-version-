@@ -90,6 +90,21 @@ class RootActivity : AppCompatActivity(), RootScreen {
 
     private val viewModel: RootViewModel by viewModels()
 
+    /**
+     * Reaching an app that is already running.
+     *
+     * The composition reads the intent the activity was *created* with, so with the app warm
+     * in memory a Quick Settings tap or a launcher shortcut arrived here and went nowhere.
+     * Setting the activity's intent keeps the two in agreement for anything that reads it
+     * later.
+     */
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent ?: return
+        setIntent(intent)
+        viewModel.handleIntent(intent)
+    }
+
     @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
