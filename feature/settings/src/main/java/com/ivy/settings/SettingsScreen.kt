@@ -58,6 +58,7 @@ import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
 import com.ivy.navigation.DataToolsScreen
 import com.ivy.navigation.ImportScreen
+import com.ivy.navigation.PrivacySettingsScreen
 import com.ivy.navigation.InsightsScreen
 import com.ivy.navigation.TripsScreen
 import com.ivy.navigation.QuickAddSettingsScreen
@@ -474,6 +475,16 @@ private fun BoxWithConstraintsScope.UI(
                 description = "Find duplicate transactions, recategorize in bulk and archive " +
                     "accounts you have closed.",
                 onClick = { nav.navigateTo(DataToolsScreen) }
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_safe_m,
+                text = stringResource(R.string.privacy),
+                description = "Mask every amount at a tap, and keep the app out of screenshots " +
+                    "and the app switcher.",
+                onClick = { nav.navigateTo(PrivacySettingsScreen) }
             )
         }
 

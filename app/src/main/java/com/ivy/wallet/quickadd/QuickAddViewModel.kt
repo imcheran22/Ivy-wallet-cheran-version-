@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivy.base.legacy.Theme
 import com.ivy.base.model.TransactionType
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import com.ivy.data.datastore.DatastoreKeys
 import com.ivy.data.db.dao.read.SettingsDao
 import com.ivy.domain.usecase.quickadd.QuickAddOptionsUseCase
 import com.ivy.domain.usecase.quickadd.QuickAddPresetStore
@@ -14,6 +17,9 @@ import com.ivy.legacy.utils.format
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +43,7 @@ class QuickAddViewModel @Inject constructor(
     private val presetStore: QuickAddPresetStore,
     private val settingsDao: SettingsDao,
     private val ivyContext: IvyWalletCtx,
+    private val dataStore: DataStore<Preferences>,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(QuickAddUiState())
@@ -45,6 +52,11 @@ class QuickAddViewModel @Inject constructor(
     /** Emitted when the sheet has nothing left to do and the activity should close. */
     private val _dismiss = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val dismiss: SharedFlow<Unit> = _dismiss.asSharedFlow()
+
+    /** The sheet shows a balance-adjacent confirmation, so it honours the same privacy flag. */
+    val secureScreen: StateFlow<Boolean> = dataStore.data
+        .map { it[DatastoreKeys.SECURE_SCREEN_ENABLED] ?: false }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private var started = false
 

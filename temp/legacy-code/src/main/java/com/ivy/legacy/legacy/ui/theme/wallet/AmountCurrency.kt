@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ivy.design.api.LocalHideAmounts
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.legacy.utils.format
@@ -31,7 +32,7 @@ fun AmountCurrencyB2Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = amount.format(currency),
+            text = maskedOrFormatted(amount = amount, currency = currency),
             style = UI.typo.nB2.style(
                 fontWeight = amountFontWeight,
                 color = textColor
@@ -82,7 +83,11 @@ fun AmountCurrencyB1(
     shortenBigNumbers: Boolean = false
 ) {
     val shortAmount = shortenBigNumbers && shouldShortAmount(amount)
-    val text = if (shortAmount) shortenAmount(amount) else amount.format(currency)
+    val text = when {
+        LocalHideAmounts.current -> HIDDEN_AMOUNT
+        shortAmount -> shortenAmount(amount)
+        else -> amount.format(currency)
+    }
     Text(
         modifier = Modifier.testTag("amount_currency_b1"),
         text = text,
@@ -185,3 +190,13 @@ fun AmountCurrencyCaption(
         )
     )
 }
+
+/**
+ * The mask used everywhere amounts are hidden. Fixed width so a masked screen doesn't reflow
+ * into a different shape and give the size of the number away.
+ */
+const val HIDDEN_AMOUNT = "****"
+
+@Composable
+private fun maskedOrFormatted(amount: Double, currency: String): String =
+    if (LocalHideAmounts.current) HIDDEN_AMOUNT else amount.format(currency)

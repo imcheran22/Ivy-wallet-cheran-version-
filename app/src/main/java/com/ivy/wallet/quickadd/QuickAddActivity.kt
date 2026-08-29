@@ -3,6 +3,7 @@ package com.ivy.wallet.quickadd
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -62,6 +63,18 @@ class QuickAddActivity : AppCompatActivity() {
 
         setContent {
             val state by viewModel.state.collectAsState()
+            val secureScreen by viewModel.secureScreen.collectAsState()
+
+            LaunchedEffect(secureScreen) {
+                if (secureScreen) {
+                    window.setFlags(
+                        WindowManager.LayoutParams.FLAG_SECURE,
+                        WindowManager.LayoutParams.FLAG_SECURE,
+                    )
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
 
             LaunchedEffect(Unit) {
                 viewModel.dismiss.collect { finish() }

@@ -8,6 +8,9 @@ import com.ivy.base.legacy.SharedPrefs
 import com.ivy.base.legacy.Theme
 import com.ivy.base.legacy.stringRes
 import com.ivy.base.model.TransactionType
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import com.ivy.data.datastore.DatastoreKeys
 import com.ivy.data.db.dao.read.SettingsDao
 import com.ivy.domain.usecase.sms.SmsCatchUpUseCase
 import com.ivy.frp.test.TestIdlingResource
@@ -30,6 +33,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.UUID
@@ -48,6 +55,7 @@ class RootViewModel @Inject constructor(
     private val smsCatchUpUseCase: SmsCatchUpUseCase,
     private val quickAddNotificationManager: QuickAddNotificationManager,
     private val dailySummaryScheduler: DailySummaryScheduler,
+    private val dataStore: DataStore<Preferences>,
 ) : ViewModel() {
 
     companion object {
@@ -63,6 +71,19 @@ class RootViewModel @Inject constructor(
 
     private val _appLocked = MutableStateFlow<Boolean?>(null)
     val appLocked = _appLocked.readOnly()
+
+    /** Masks every amount the app draws. Meant to be flipped in a hurry. */
+    val hideAmounts: StateFlow<Boolean> = dataStore.data
+        .map { it[DatastoreKeys.HIDE_AMOUNTS] ?: false }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /**
+     * Keeps the app out of screenshots and the app switcher's thumbnail, where a balance would
+     * otherwise sit in plain view long after the app is closed.
+     */
+    val secureScreen: StateFlow<Boolean> = dataStore.data
+        .map { it[DatastoreKeys.SECURE_SCREEN_ENABLED] ?: false }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun start(systemDarkMode: Boolean, intent: Intent) {
         viewModelScope.launch {

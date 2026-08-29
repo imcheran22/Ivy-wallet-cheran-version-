@@ -104,6 +104,13 @@ class RootActivity : AppCompatActivity(), RootScreen {
                 viewModel.start(isSystemInDarkTheme, intent)
             }
 
+            val hideAmounts by viewModel.hideAmounts.collectAsState()
+            val secureScreen by viewModel.secureScreen.collectAsState()
+
+            LaunchedEffect(secureScreen) {
+                applySecureFlag(secureScreen)
+            }
+
             val securityStatus = androidx.compose.runtime.remember {
                 if (!BuildConfig.DEBUG) securityManager.checkSecurity() else null
             }
@@ -131,6 +138,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
                             timeConverter = timeConverter,
                             timeProvider = timeProvider,
                             timeFormatter = timeFormatter,
+                            hideAmounts = hideAmounts,
                         ) {
                             AppLockedScreen(
                                 onShowOSBiometricsModal = {
@@ -153,6 +161,7 @@ class RootActivity : AppCompatActivity(), RootScreen {
                                 timeConverter = timeConverter,
                                 timeProvider = timeProvider,
                                 timeFormatter = timeFormatter,
+                                hideAmounts = hideAmounts,
                             ) {
                                 IvyNavGraph(screen)
                             }
@@ -170,6 +179,20 @@ class RootActivity : AppCompatActivity(), RootScreen {
             ) {
                 dateTimePicker.Content()
             }
+        }
+    }
+
+    /**
+     * Blanks the app-switcher thumbnail and blocks screenshots while the setting is on.
+     */
+    private fun applySecureFlag(secure: Boolean) {
+        if (secure) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE,
+            )
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
     }
 
@@ -313,14 +336,12 @@ class RootActivity : AppCompatActivity(), RootScreen {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (viewModel.isAppLockEnabled() && !hasFocus) {
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-            )
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        }
+        // App lock hides the app only while it's in the background; the privacy setting keeps it
+        // hidden always. Whichever asks for it, it stays on until both stop asking.
+        applySecureFlag(
+            secure = viewModel.secureScreen.value ||
+                (viewModel.isAppLockEnabled() && !hasFocus)
+        )
     }
 
     override fun onResume() {

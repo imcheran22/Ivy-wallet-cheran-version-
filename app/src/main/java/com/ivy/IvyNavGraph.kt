@@ -41,6 +41,7 @@ import com.ivy.navigation.Screen
 import com.ivy.navigation.SearchScreen
 import com.ivy.navigation.SettingsScreen
 import com.ivy.navigation.InsightsScreen
+import com.ivy.navigation.PrivacySettingsScreen
 import com.ivy.navigation.QuickAddSettingsScreen
 import com.ivy.navigation.SmsDiagnosticScreen
 import com.ivy.navigation.SmsInboxScreen
@@ -56,6 +57,7 @@ import com.ivy.settings.SettingsScreen
 import com.ivy.insights.InsightsScreenImpl
 import com.ivy.insights.trips.TripsScreenImpl
 import com.ivy.settings.datatools.DataToolsScreenImpl
+import com.ivy.settings.privacy.PrivacySettingsScreenImpl
 import com.ivy.settings.quickadd.QuickAddSettingsScreenImpl
 import com.ivy.smsinbox.ui.SmsDiagnosticScreenImpl
 import com.ivy.smsinbox.ui.SmsInboxScreenImpl
@@ -100,5 +102,6 @@ fun BoxWithConstraintsScope.IvyNavGraph(screen: Screen?) {
         InsightsScreen -> InsightsScreenImpl()
         TripsScreen -> TripsScreenImpl()
         DataToolsScreen -> DataToolsScreenImpl()
+        PrivacySettingsScreen -> PrivacySettingsScreenImpl()
     }
 }

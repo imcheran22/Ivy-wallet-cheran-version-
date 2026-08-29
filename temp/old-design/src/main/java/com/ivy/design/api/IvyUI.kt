@@ -18,6 +18,16 @@ import com.ivy.ui.time.TimeFormatter
 
 val LocalIvyContext = compositionLocalOf<IvyContext> { error("No LocalIvyContext") }
 
+/**
+ * When true, every amount the app draws is masked.
+ *
+ * Provided here rather than passed down because amounts are rendered by shared components on
+ * nearly every screen - a flag that has to be threaded through forty call sites is a flag that
+ * will be missing from one of them, which is the one that matters.
+ */
+@Suppress("CompositionLocalAllowlist")
+val LocalHideAmounts = compositionLocalOf { false }
+
 @Suppress("CompositionLocalAllowlist")
 @Deprecated("Used only for time migration to Instant. Never use it in new code!")
 val LocalTimeConverter = compositionLocalOf<TimeConverter> { error("No LocalTimeConverter") }
@@ -39,6 +49,7 @@ fun IvyUI(
     timeFormatter: TimeFormatter,
     design: IvyDesign,
     includeSurface: Boolean = true,
+    hideAmounts: Boolean = false,
     content: @Composable BoxWithConstraintsScope.() -> Unit
 ) {
     val ivyContext = design.context()
@@ -48,6 +59,7 @@ fun IvyUI(
         LocalTimeConverter provides timeConverter,
         LocalTimeProvider provides timeProvider,
         LocalTimeFormatter provides timeFormatter,
+        LocalHideAmounts provides hideAmounts,
     ) {
         IvyTheme(
             theme = ivyContext.theme,

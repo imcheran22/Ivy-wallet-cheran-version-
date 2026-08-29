@@ -174,3 +174,8 @@ data object TripsScreen : Screen
  * Duplicate detection, bulk recategorization and account archiving.
  */
 data object DataToolsScreen : Screen
+
+/**
+ * Hiding amounts and keeping the app out of screenshots.
+ */
+data object PrivacySettingsScreen : Screen

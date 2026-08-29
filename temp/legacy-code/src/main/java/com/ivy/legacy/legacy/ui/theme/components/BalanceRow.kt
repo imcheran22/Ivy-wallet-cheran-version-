@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ivy.design.api.LocalHideAmounts
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.legacy.IvyWalletComponentPreview
@@ -97,6 +98,10 @@ fun BalanceRow(
     shortenBigNumbers: Boolean = false,
     doubleRowDisplay: Boolean = false,
 ) {
+    // Panic-hide wins over the per-screen setting: the point of it is that one switch covers
+    // everything, with nothing left showing because a screen forgot to ask.
+    @Suppress("NAME_SHADOWING")
+    val hiddenMode = hiddenMode || LocalHideAmounts.current
     val shortAmount = shortenBigNumbers && shouldShortAmount(balance)
     val integerPartFormatted = if (shortAmount) {
         shortenAmount(balance)

@@ -587,4 +587,11 @@
     <string name="search">Search</string>
     <string name="saved_filters">Saved filters</string>
     <string name="save_filter">Save filter</string>
+    <!-- Privacy -->
+    <string name="privacy">Privacy</string>
+    <string name="hide_amounts">Hide amounts</string>
+    <string name="hide_amounts_description">Masks every amount in the app as ****. Your data is untouched - only what\'s on screen changes.</string>
+    <string name="secure_screen">Hide from recents and screenshots</string>
+    <string name="secure_screen_description">Blanks the app\'s thumbnail in the app switcher and blocks screenshots, so a balance isn\'t left sitting there after you close the app.</string>
+    <string name="hide_amounts_tile_hint">Add the \"Hide amounts\" tile to your Quick Settings to flip this from the notification shade, without opening the app.</string>
 </resources>
