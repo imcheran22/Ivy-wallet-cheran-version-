@@ -11,4 +11,5 @@ sealed interface BudgetScreenEvent {
     data class OnDeleteBudget(val budget: Budget) : BudgetScreenEvent
     data class OnReorderModalVisible(val visible: Boolean) : BudgetScreenEvent
     data class OnBudgetModalData(val budgetModalData: BudgetModalData?) : BudgetScreenEvent
+    data class OnToggleRollover(val budget: Budget, val enabled: Boolean) : BudgetScreenEvent
 }

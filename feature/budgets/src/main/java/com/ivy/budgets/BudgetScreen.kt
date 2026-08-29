@@ -34,7 +34,11 @@ import com.ivy.navigation.BudgetScreen
 import com.ivy.navigation.navigation
 import com.ivy.navigation.screenScopedViewModel
 import com.ivy.ui.R
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import com.ivy.wallet.ui.theme.Gray
+import com.ivy.wallet.ui.theme.Green
+import com.ivy.wallet.ui.theme.Red
 import com.ivy.wallet.ui.theme.components.IvyIcon
 import com.ivy.wallet.ui.theme.components.ReorderButton
 import com.ivy.wallet.ui.theme.components.ReorderModalSingleType
@@ -70,6 +74,8 @@ private fun BoxWithConstraintsScope.UI(
             baseCurrency = state.baseCurrency,
             appBudgetMax = state.appBudgetMax,
             categoryBudgetsTotal = state.categoryBudgetsTotal,
+            safeToSpendToday = state.safeToSpendToday,
+            daysLeft = state.daysLeft,
             setReorderModalVisible = {
                 onEvent(BudgetScreenEvent.OnReorderModalVisible(it))
             }
@@ -82,7 +88,15 @@ private fun BoxWithConstraintsScope.UI(
 
             BudgetItem(
                 displayBudget = item,
-                baseCurrency = state.baseCurrency
+                baseCurrency = state.baseCurrency,
+                onToggleRollover = {
+                    onEvent(
+                        BudgetScreenEvent.OnToggleRollover(
+                            budget = item.budget,
+                            enabled = !item.rolloverEnabled
+                        )
+                    )
+                }
             ) {
                 onEvent(
                     BudgetScreenEvent.OnBudgetModalData(
@@ -164,12 +178,15 @@ private fun BoxWithConstraintsScope.UI(
 }
 
 @Composable
+@Suppress("LongParameterList")
 private fun Toolbar(
     timeRange: com.ivy.legacy.data.model.FromToTimeRange?,
     totalRemainingBudgetText: String?,
     baseCurrency: String,
     appBudgetMax: Double,
     categoryBudgetsTotal: Double,
+    safeToSpendToday: Double,
+    daysLeft: Int,
     setReorderModalVisible: (Boolean) -> Unit
 ) {
     Row(
@@ -252,6 +269,23 @@ private fun Toolbar(
                         )
                     )
                 }
+
+                if (daysLeft > 0) {
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        text = stringResource(
+                            R.string.safe_to_spend_a_day,
+                            safeToSpendToday.format(baseCurrency),
+                            baseCurrency,
+                            daysLeft
+                        ),
+                        style = UI.typo.nB2.style(
+                            color = if (safeToSpendToday < 0) Red else Green,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    )
+                }
             }
         }
 
@@ -268,6 +302,7 @@ private fun Toolbar(
 private fun BudgetItem(
     displayBudget: DisplayBudget,
     baseCurrency: String,
+    onToggleRollover: () -> Unit,
     onClick: () -> Unit
 ) {
     Row(
@@ -302,7 +337,7 @@ private fun BudgetItem(
         }
 
         AmountCurrencyB1(
-            amount = displayBudget.budget.amount,
+            amount = displayBudget.availableAmount,
             currency = baseCurrency,
             amountFontWeight = FontWeight.ExtraBold
         )
@@ -310,16 +345,80 @@ private fun BudgetItem(
         Spacer(Modifier.width(32.dp))
     }
 
+    Spacer(Modifier.height(8.dp))
+
+    RolloverRow(
+        displayBudget = displayBudget,
+        baseCurrency = baseCurrency,
+        onToggleRollover = onToggleRollover
+    )
+
     Spacer(Modifier.height(12.dp))
 
     BudgetBattery(
         modifier = Modifier.padding(horizontal = 16.dp),
         currency = baseCurrency,
         expenses = displayBudget.spentAmount,
-        budget = displayBudget.budget.amount,
+        budget = displayBudget.availableAmount,
         backgroundNotFilled = UI.colors.medium
     ) {
         onClick()
+    }
+}
+
+/**
+ * The rollover switch, plus what it carried in.
+ *
+ * Shown per budget rather than in Settings because rollover changes what this specific budget
+ * means, and the amount it carried is only meaningful next to the budget it belongs to.
+ */
+@Composable
+private fun RolloverRow(
+    displayBudget: DisplayBudget,
+    baseCurrency: String,
+    onToggleRollover: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            modifier = Modifier
+                .clip(UI.shapes.rFull)
+                .border(
+                    width = 2.dp,
+                    color = if (displayBudget.rolloverEnabled) Green else UI.colors.medium,
+                    shape = UI.shapes.rFull
+                )
+                .clickableNoIndication(rememberInteractionSource()) { onToggleRollover() }
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            text = stringResource(
+                if (displayBudget.rolloverEnabled) {
+                    R.string.rollover_on
+                } else {
+                    R.string.rollover_off
+                }
+            ),
+            style = UI.typo.c.style(
+                color = if (displayBudget.rolloverEnabled) Green else Gray,
+                fontWeight = FontWeight.Bold
+            )
+        )
+
+        if (displayBudget.rollover > 0.0) {
+            Spacer(Modifier.width(8.dp))
+
+            Text(
+                text = stringResource(
+                    R.string.carried_over,
+                    displayBudget.rollover.format(baseCurrency),
+                    baseCurrency
+                ),
+                style = UI.typo.c.style(color = Gray)
+            )
+        }
     }
 }
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,9 @@ import com.ivy.data.model.Income
 import com.ivy.data.model.Transaction
 import com.ivy.data.model.Transfer
 import com.ivy.data.repository.CategoryRepository
+import com.ivy.domain.usecase.budget.BudgetPreferences
+import com.ivy.domain.usecase.budget.BudgetProgressUseCase
+import com.ivy.domain.usecase.period.MonthPeriodProvider
 import com.ivy.data.temp.migration.getAccountId
 import com.ivy.data.temp.migration.getValue
 import com.ivy.frp.sumOfSuspend
@@ -61,6 +65,9 @@ class BudgetViewModel @Inject constructor(
     private val exchangeAct: ExchangeAct,
     private val timeProvider: TimeProvider,
     private val timeConverter: TimeConverter,
+    private val budgetProgressUseCase: BudgetProgressUseCase,
+    private val budgetPreferences: BudgetPreferences,
+    private val periodProvider: MonthPeriodProvider,
 ) : ComposeViewModel<BudgetScreenState, BudgetScreenEvent>() {
 
     private val baseCurrency = mutableStateOf("")
@@ -73,6 +80,8 @@ class BudgetViewModel @Inject constructor(
     private val totalRemainingBudget = mutableDoubleStateOf(0.0)
     private val reorderModalVisible = mutableStateOf(false)
     private val budgetModalData = mutableStateOf<BudgetModalData?>(null)
+    private val safeToSpendToday = mutableDoubleStateOf(0.0)
+    private val daysLeft = mutableIntStateOf(0)
 
     @Composable
     override fun uiState(): BudgetScreenState {
@@ -90,7 +99,9 @@ class BudgetViewModel @Inject constructor(
             totalRemainingBudgetText = getTotalRemainingBudgetText(),
             timeRange = getTimeRange(),
             reorderModalVisible = getReorderModalVisible(),
-            budgetModalData = getBudgetModalData()
+            budgetModalData = getBudgetModalData(),
+            safeToSpendToday = safeToSpendToday.doubleValue,
+            daysLeft = daysLeft.intValue,
         )
     }
 
@@ -178,6 +189,13 @@ class BudgetViewModel @Inject constructor(
             is BudgetScreenEvent.OnBudgetModalData -> {
                 budgetModalData.value = event.budgetModalData
             }
+
+            is BudgetScreenEvent.OnToggleRollover -> {
+                viewModelScope.launch {
+                    budgetPreferences.setRollover(event.budget.id, event.enabled)
+                    start()
+                }
+            }
         }
     }
 
@@ -200,6 +218,9 @@ class BudgetViewModel @Inject constructor(
                 .filter { it.categoryIdsSerialized.isNotNullOrBlank() }
                 .sumOf { it.amount }
 
+            val rollovers = runCatching { budgetProgressUseCase.rollovers() }
+                .getOrDefault(emptyMap())
+
             this@BudgetViewModel.budgets.value = com.ivy.legacy.utils.ioThread {
                 budgets.map {
                     DisplayBudget(
@@ -209,13 +230,23 @@ class BudgetViewModel @Inject constructor(
                             transactions = historyTrnsAct(timeRange.toCloseTimeRange()),
                             accounts = accounts,
                             baseCurrencyCode = baseCurrency
-                        )
+                        ),
+                        rollover = rollovers[it.id] ?: 0.0,
+                        rolloverEnabled = rollovers.containsKey(it.id),
                     )
                 }.toImmutableList()
             }
             totalRemainingBudget.doubleValue = calculateTotalRemainingBudget(
                 budgets = this@BudgetViewModel.budgets.value,
                 categoryBudgetsTotal = categoryBudgetsTotal.doubleValue
+            )
+
+            val period = periodProvider.current()
+            daysLeft.intValue = period.daysLeft(timeProvider.localDateNow())
+            safeToSpendToday.doubleValue = safeToSpendPerDay(
+                remaining = totalRemainingBudget.doubleValue +
+                    this@BudgetViewModel.budgets.value.sumOf { it.rollover },
+                daysLeft = daysLeft.intValue,
             )
             this@BudgetViewModel.accounts.value = accounts
             this@BudgetViewModel.baseCurrency.value = baseCurrency
@@ -303,6 +334,13 @@ class BudgetViewModel @Inject constructor(
         }
     }
 }
+
+/**
+ * Spreads what's left evenly over the days that remain. Negative stays negative - being over
+ * budget is information, and rounding it up to zero would hide it.
+ */
+fun safeToSpendPerDay(remaining: Double, daysLeft: Int): Double =
+    if (daysLeft <= 0) remaining else remaining / daysLeft
 
 fun calculateTotalRemainingBudget(
     budgets: ImmutableList<DisplayBudget>,

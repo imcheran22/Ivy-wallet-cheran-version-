@@ -1,10 +1,12 @@
 package com.ivy.transaction
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -40,6 +42,7 @@ import com.ivy.design.l0_system.Orange
 import com.ivy.design.l0_system.UI
 import com.ivy.design.l0_system.style
 import com.ivy.design.utils.hideKeyboard
+import com.ivy.domain.usecase.budget.BudgetCapCheck
 import com.ivy.legacy.IvyWalletPreview
 import com.ivy.legacy.data.EditTransactionDisplayLoan
 import com.ivy.legacy.datamodel.Account
@@ -48,6 +51,7 @@ import com.ivy.legacy.ui.component.edit.TransactionDateTime
 import com.ivy.legacy.ui.component.edit.core.Description
 import com.ivy.legacy.ui.component.tags.AddTagButton
 import com.ivy.legacy.ui.component.tags.ShowTagModal
+import com.ivy.legacy.utils.format
 import com.ivy.legacy.utils.onScreenStart
 import com.ivy.navigation.EditPlannedScreen
 import com.ivy.navigation.EditTransactionScreen
@@ -69,6 +73,8 @@ import com.ivy.wallet.ui.theme.components.ChangeTransactionTypeModal
 import com.ivy.wallet.ui.theme.components.CustomExchangeRateCard
 import com.ivy.wallet.ui.theme.modal.DeleteModal
 import com.ivy.wallet.ui.theme.modal.ModalAdd
+import com.ivy.wallet.ui.theme.Green
+import com.ivy.wallet.ui.theme.Red
 import com.ivy.wallet.ui.theme.modal.ModalCheck
 import com.ivy.wallet.ui.theme.modal.ModalSave
 import com.ivy.wallet.ui.theme.modal.ProgressModal
@@ -87,6 +93,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @ExperimentalFoundationApi
@@ -123,6 +130,7 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransactionScreen)
         tags = uiState.tags,
         transactionAssociatedTags = uiState.transactionAssociatedTags,
         hasChanges = uiState.hasChanges,
+        budgetCapCheck = uiState.budgetCapCheck,
         onSetDate = {
             viewModel.onEvent(EditTransactionViewEvent.OnChangeDate)
         },
@@ -233,6 +241,7 @@ private fun BoxWithConstraintsScope.UI(
     loanData: EditTransactionDisplayLoan = EditTransactionDisplayLoan(),
     backgroundProcessing: Boolean = false,
     hasChanges: Boolean = false,
+    budgetCapCheck: BudgetCapCheck? = null,
 
     ) {
     var chooseCategoryModalVisible by remember { mutableStateOf(false) }
@@ -345,6 +354,12 @@ private fun BoxWithConstraintsScope.UI(
         Category(category = category, onChooseCategory = {
             chooseCategoryModalVisible = true
         })
+
+        if (budgetCapCheck != null) {
+            Spacer(Modifier.height(12.dp))
+
+            BudgetCapBanner(check = budgetCapCheck)
+        }
 
         Spacer(Modifier.height(16.dp))
 
@@ -716,4 +731,39 @@ fun EditTransactionScreenUiTest(isDark: Boolean) {
     IvyWalletPreview(theme) {
         Preview(isDark)
     }
+}
+
+/**
+ * The budget consequence of what's being typed, in the editor rather than in a report.
+ *
+ * Deliberately not a dialog and never blocking: it is the user's money and the transaction
+ * already happened. The only useful thing an app can do is say so before they look away.
+ */
+@Composable
+private fun BudgetCapBanner(check: BudgetCapCheck) {
+    val color = if (check.exceeded) Red else Green
+
+    Text(
+        modifier = Modifier
+            .padding(horizontal = 24.dp)
+            .fillMaxWidth()
+            .background(color.copy(alpha = 0.12f), UI.shapes.r4)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        text = if (check.exceeded) {
+            stringResource(
+                R.string.over_budget_warning,
+                abs(check.remainingAfter).format(check.currency),
+                check.currency,
+                check.budgetName
+            )
+        } else {
+            stringResource(
+                R.string.budget_left_warning,
+                check.remainingAfter.format(check.currency),
+                check.currency,
+                check.budgetName
+            )
+        },
+        style = UI.typo.c.style(color = color, fontWeight = FontWeight.Bold)
+    )
 }

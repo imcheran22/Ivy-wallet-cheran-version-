@@ -27,6 +27,8 @@ import com.ivy.data.model.TransactionId
 import com.ivy.data.model.primitive.AssociationId
 import com.ivy.data.model.primitive.NotBlankTrimmedString
 import com.ivy.data.repository.CategoryRepository
+import com.ivy.domain.usecase.budget.BudgetCapCheck
+import com.ivy.domain.usecase.budget.BudgetCapCheckUseCase
 import com.ivy.data.repository.TagRepository
 import com.ivy.data.repository.TransactionRepository
 import com.ivy.data.repository.mapper.TagMapper
@@ -109,6 +111,7 @@ class EditTransactionViewModel @Inject constructor(
     private val timeProvider: TimeProvider,
     private val dateTimePicker: DateTimePicker,
     private val coupleTransactionSyncer: CoupleTransactionSyncer,
+    private val budgetCapCheckUseCase: BudgetCapCheckUseCase,
 ) : ComposeViewModel<EditTransactionViewState, EditTransactionViewEvent>() {
 
     private var transactionType by mutableStateOf(TransactionType.EXPENSE)
@@ -126,6 +129,7 @@ class EditTransactionViewModel @Inject constructor(
     private var toAccount by mutableStateOf<Account?>(null)
     private var category by mutableStateOf<Category?>(null)
     private var amount by mutableDoubleStateOf(0.0)
+    private var budgetCapCheck by mutableStateOf<BudgetCapCheck?>(null)
     private var hasChanges by mutableStateOf(false)
     private var displayLoanHelper by mutableStateOf(EditTransactionDisplayLoan())
 
@@ -185,6 +189,7 @@ class EditTransactionViewModel @Inject constructor(
                 tagRepository.findByAssociatedId(AssociationId(loadedTransaction().id)).map(Tag::id)
                     .toImmutableList()
             display(loadedTransaction!!)
+            refreshBudgetCapCheck()
         }
     }
 
@@ -209,7 +214,8 @@ class EditTransactionViewModel @Inject constructor(
             backgroundProcessingStarted = getBackgroundProcessingStarted(),
             customExchangeRateState = getCustomExchangeRateState(),
             tags = getTags(),
-            transactionAssociatedTags = getTransactionAssociatedTags()
+            transactionAssociatedTags = getTransactionAssociatedTags(),
+            budgetCapCheck = budgetCapCheck,
         )
     }
 
@@ -467,6 +473,7 @@ class EditTransactionViewModel @Inject constructor(
             amount = newAmount
             updateCustomExchangeRateState(amt = newAmount)
 
+            refreshBudgetCapCheck()
             saveIfEditMode()
         }
     }
@@ -505,6 +512,7 @@ class EditTransactionViewModel @Inject constructor(
             }
 
             accountsChanged = true
+            refreshBudgetCapCheck()
 
             // update last selected account
             sharedPrefs.putString(SharedPrefs.LAST_SELECTED_ACCOUNT_ID, newAccount.id.toString())
@@ -588,7 +596,28 @@ class EditTransactionViewModel @Inject constructor(
             type = newTransactionType
         )
         transactionType = newTransactionType
+        refreshBudgetCapCheck()
         saveIfEditMode()
+    }
+
+    /**
+     * Recomputed on every change that could move the answer. Only expenses can break a budget,
+     * so income and transfers clear the warning rather than leaving a stale one on screen.
+     */
+    private fun refreshBudgetCapCheck() {
+        viewModelScope.launch {
+            budgetCapCheck = if (transactionType == TransactionType.EXPENSE) {
+                runCatching {
+                    budgetCapCheckUseCase.check(
+                        amount = amount,
+                        categoryId = category?.id?.value,
+                        accountId = account?.id,
+                    )
+                }.getOrNull()
+            } else {
+                null
+            }
+        }
     }
 
     private fun onPayPlannedPayment() {
@@ -662,6 +691,7 @@ class EditTransactionViewModel @Inject constructor(
         )
         category = newCategory
 
+        refreshBudgetCapCheck()
         saveIfEditMode()
 
         updateTitleSuggestions()

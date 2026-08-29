@@ -5,6 +5,7 @@ import com.ivy.base.model.TransactionType
 import com.ivy.data.model.Category
 import com.ivy.data.model.Tag
 import com.ivy.data.model.TagId
+import com.ivy.domain.usecase.budget.BudgetCapCheck
 import com.ivy.legacy.data.EditTransactionDisplayLoan
 import com.ivy.legacy.datamodel.Account
 import com.ivy.wallet.domain.data.CustomExchangeRateState
@@ -35,7 +36,11 @@ data class EditTransactionViewState(
     val backgroundProcessingStarted: Boolean,
     val customExchangeRateState: CustomExchangeRateState,
     val tags: ImmutableList<Tag>,
-    val transactionAssociatedTags: ImmutableList<TagId>
+    val transactionAssociatedTags: ImmutableList<TagId>,
+    /**
+     * What this expense does to the budget it lands in, shown while it's still being typed.
+     */
+    val budgetCapCheck: BudgetCapCheck? = null,
 )
 
 sealed interface EditTransactionViewEvent {

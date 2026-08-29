@@ -31,6 +31,7 @@ data class BudgetSummary(
     val rolloverEnabled: Boolean,
     val rollover: Double,
     val categoryIds: List<UUID>,
+    val accountIds: List<UUID>,
 ) {
     val available: Double
         get() = amount + rollover
@@ -113,6 +114,40 @@ class BudgetProgressUseCase @Inject constructor(
     }
 
     /**
+     * Just the carried-over amounts, for screens that already know what was spent and only need
+     * to know how much room previous months left behind.
+     */
+    suspend fun rollovers(): Map<UUID, Double> = withContext(dispatchersProvider.io) {
+        val rolloverIds = budgetPreferences.rolloverBudgetIds()
+        if (rolloverIds.isEmpty()) return@withContext emptyMap()
+
+        val period = periodProvider.current()
+        val rates = currencyConverter.rates()
+        val accountCurrencies = accountRepository.findAll()
+            .associate { it.id.value to it.asset.code }
+        val historyStart = periodProvider.previous(period, ROLLOVER_MONTHS.toLong()).start
+        val transactions = transactionRepository.findAllBetween(historyStart, period.start)
+
+        budgetDao.findAll()
+            .filter { it.id in rolloverIds }
+            .associate { budget ->
+                val categoryIds = parseIds(budget.categoryIdsSerialized)
+                val accountIds = parseIds(budget.accountIdsSerialized)
+                val matching = transactions.filterIsInstance<Expense>()
+                    .filter { accountIds.isEmpty() || it.account.value in accountIds }
+                    .filter { categoryIds.isEmpty() || it.category?.value in categoryIds }
+
+                budget.id to rollover(
+                    amount = budget.amount,
+                    matching = matching,
+                    period = period,
+                    rates = rates,
+                    accountCurrencies = accountCurrencies,
+                )
+            }
+    }
+
+    /**
      * An overall budget (one with no categories) is a cap on everything, so it can't simply be
      * added to the per-category ones - that would count the same money twice. When the user has
      * both, the overall budget wins as the month's headline number.
@@ -167,6 +202,7 @@ class BudgetProgressUseCase @Inject constructor(
                 0.0
             },
             categoryIds = categoryIds,
+            accountIds = accountIds,
         )
     }
 

@@ -530,4 +530,10 @@
     <string name="amount">Amount</string>
     <string name="category">Category</string>
     <string name="cancel">Cancel</string>
+    <string name="safe_to_spend_a_day">%1$s %2$s a day for %3$d more days</string>
+    <string name="rollover_on">Rollover on</string>
+    <string name="rollover_off">Rollover off</string>
+    <string name="carried_over">+%1$s %2$s carried over</string>
+    <string name="over_budget_warning">This puts %1$s %2$s %3$s over budget</string>
+    <string name="budget_left_warning">%1$s %2$s left in %3$s after this</string>
 </resources>

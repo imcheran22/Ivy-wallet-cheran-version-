@@ -18,5 +18,11 @@ data class BudgetScreenState(
     val totalRemainingBudgetText: String?,
     val timeRange: FromToTimeRange?,
     val reorderModalVisible: Boolean,
-    val budgetModalData: BudgetModalData?
+    val budgetModalData: BudgetModalData?,
+    /**
+     * What's left divided by the days left - the number that changes a decision in a shop,
+     * where a monthly total doesn't.
+     */
+    val safeToSpendToday: Double = 0.0,
+    val daysLeft: Int = 0,
 )
