@@ -58,6 +58,7 @@ import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
 import com.ivy.navigation.ImportScreen
 import com.ivy.navigation.InsightsScreen
+import com.ivy.navigation.TripsScreen
 import com.ivy.navigation.QuickAddSettingsScreen
 import com.ivy.navigation.SmsDiagnosticScreen
 import com.ivy.navigation.SmsInboxScreen
@@ -452,6 +453,16 @@ private fun BoxWithConstraintsScope.UI(
                 description = "Where this month's money went compared with last, and whether " +
                     "your net worth is actually going up.",
                 onClick = { nav.navigateTo(InsightsScreen) }
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_travel_m,
+                text = stringResource(R.string.trips),
+                description = "Everything spent between two dates, totalled - in your currency " +
+                    "and in the one you actually spent.",
+                onClick = { nav.navigateTo(TripsScreen) }
             )
         }
 

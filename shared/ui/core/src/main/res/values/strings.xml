@@ -548,4 +548,12 @@
     <string name="top_payees">Top payees</string>
     <string name="new_this_month">new</string>
     <string name="times_this_month">%1$d times this month</string>
+    <!-- Trips -->
+    <string name="trips">Trips</string>
+    <string name="add_trip">Add trip</string>
+    <string name="edit_trip">Edit trip</string>
+    <string name="no_trips_yet">No trips yet. Add one and everything spent between those dates is counted as part of it.</string>
+    <string name="trip_currency">Spending currency (optional)</string>
+    <string name="trip_per_day">%1$s %2$s a day over %3$d days · %4$d transactions</string>
+    <string name="name">Name</string>
 </resources>

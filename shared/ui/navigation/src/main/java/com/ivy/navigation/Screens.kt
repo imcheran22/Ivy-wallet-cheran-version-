@@ -164,3 +164,8 @@ data object QuickAddSettingsScreen : Screen
  * Month-over-month spending and net worth over time.
  */
 data object InsightsScreen : Screen
+
+/**
+ * Holidays and work trips: everything spent between two dates, totalled.
+ */
+data object TripsScreen : Screen
