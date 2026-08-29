@@ -19,6 +19,7 @@ data class SupabaseAccountDto(
     @SerialName("order_num") val orderNum: Double,
     @SerialName("include_in_balance") val includeInBalance: Boolean,
     @SerialName("bank_account_suffix") val bankAccountSuffix: String? = null,
+    val archived: Boolean = false,
     @SerialName("updated_at") val updatedAt: String,
 )
 
@@ -46,5 +47,6 @@ data class SupabaseTransactionDto(
     val description: String? = null,
     @SerialName("category_id") val categoryId: String? = null,
     @SerialName("date_time") val dateTime: String? = null,
+    @SerialName("attachment_url") val attachmentUrl: String? = null,
     @SerialName("updated_at") val updatedAt: String,
 )

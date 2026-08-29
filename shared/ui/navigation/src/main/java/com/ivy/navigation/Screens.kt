@@ -184,3 +184,8 @@ data object DataToolsScreen : Screen
  * Hiding amounts and keeping the app out of screenshots.
  */
 data object PrivacySettingsScreen : Screen
+
+/**
+ * Pairing two devices onto one wallet, sync status, and a restore that shows its work first.
+ */
+data object CloudSyncScreen : Screen

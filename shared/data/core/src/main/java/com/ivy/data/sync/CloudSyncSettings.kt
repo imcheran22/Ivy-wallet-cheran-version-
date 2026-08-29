@@ -14,6 +14,9 @@ data class CloudSyncPrefs(
     val supabaseUrl: String,
     val supabaseAnonKey: String,
     val lastSyncedEpochMs: Long?,
+    /** What the last sync actually did, in words - success or the error it hit. */
+    val lastResult: String? = null,
+    val ownerId: String? = null,
 )
 
 class CloudSyncSettings @Inject constructor(
@@ -26,6 +29,8 @@ class CloudSyncSettings @Inject constructor(
             supabaseUrl = prefs[DatastoreKeys.CLOUD_SYNC_SUPABASE_URL] ?: "",
             supabaseAnonKey = prefs[DatastoreKeys.CLOUD_SYNC_SUPABASE_ANON_KEY] ?: "",
             lastSyncedEpochMs = prefs[DatastoreKeys.CLOUD_SYNC_LAST_SYNCED_EPOCH_MS],
+            lastResult = prefs[DatastoreKeys.CLOUD_SYNC_LAST_RESULT],
+            ownerId = prefs[DatastoreKeys.CLOUD_SYNC_OWNER_ID],
         )
     }
 
@@ -44,6 +49,23 @@ class CloudSyncSettings @Inject constructor(
         dataStore.edit {
             it[DatastoreKeys.CLOUD_SYNC_LAST_SYNCED_EPOCH_MS] = System.currentTimeMillis()
         }
+    }
+
+    suspend fun setLastResult(result: String) {
+        dataStore.edit { it[DatastoreKeys.CLOUD_SYNC_LAST_RESULT] = result }
+    }
+
+    /**
+     * Points this install at another one's data.
+     *
+     * The owner id is what scopes rows in Supabase, so two devices that share it share a
+     * wallet. Generating one per install made this a backup; being able to set it is what
+     * makes it sync.
+     */
+    suspend fun setOwnerId(ownerId: String) {
+        val trimmed = ownerId.trim()
+        if (trimmed.isBlank()) return
+        dataStore.edit { it[DatastoreKeys.CLOUD_SYNC_OWNER_ID] = trimmed }
     }
 
     /** Stable per-install id used to scope rows in Supabase. Generated once, then persisted. */

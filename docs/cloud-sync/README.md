@@ -21,12 +21,16 @@ Setup:
 
 How it works:
 
-- Every row is tagged with a random `owner_id` generated once per app install (Settings has no
-  concept of a Supabase user account/login), so multiple installs can share one Supabase
-  project without colliding.
-- Sync is a full mirror upsert, not a CRDT - the last push wins per table. Fine for one person
-  using the app on one device at a time; if you actively edit the same data from two devices
-  at once, the later sync overwrites the earlier one.
+- Every row is tagged with an `owner_id`. It is generated once per install, and two installs
+  that share it share a wallet - which is what **Settings -> Cloud sync -> Pair another device**
+  does: it copies one device's code onto the other. Until both devices carry the same code, each
+  is backing up its own separate copy.
+- "Sync now" merges per row rather than per table: anything changed on the other device since
+  this one last synced is pulled down first, then local rows are pushed. Two devices editing
+  different rows both keep their edits. Two devices editing the *same* row since the last sync
+  still resolve last-writer-wins - for that row alone, not for the whole table.
+- "Restore from cloud" is still a wholesale overwrite of local rows, so it shows you what it
+  would replace - remote count against local count, per table - before it does anything.
 - A background sync runs roughly hourly (Android WorkManager) while enabled, plus immediately
   after an SMS auto-import.
 - See the comment header in `supabase_schema.sql` for the (deliberately minimal) security

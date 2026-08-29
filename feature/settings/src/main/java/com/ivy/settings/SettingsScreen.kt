@@ -56,6 +56,7 @@ import com.ivy.legacy.rootScreen
 import com.ivy.legacy.utils.drawColoredShadow
 import com.ivy.navigation.ExchangeRatesScreen
 import com.ivy.navigation.FeaturesScreen
+import com.ivy.navigation.CloudSyncScreen
 import com.ivy.navigation.DataToolsScreen
 import com.ivy.navigation.ImportScreen
 import com.ivy.navigation.PrivacySettingsScreen
@@ -523,6 +524,16 @@ private fun BoxWithConstraintsScope.UI(
                 description = "See which senders text you about money and exactly what the " +
                     "parser would extract - before anything is written.",
                 onClick = { nav.navigateTo(SmsDiagnosticScreen) }
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            SettingsDefaultButton(
+                icon = R.drawable.ic_custom_connect_m,
+                text = stringResource(R.string.cloud_sync),
+                description = "Pair a second device onto the same wallet, see what the last " +
+                    "sync did, and preview a restore before it overwrites anything.",
+                onClick = { nav.navigateTo(CloudSyncScreen) }
             )
 
             Spacer(Modifier.height(12.dp))

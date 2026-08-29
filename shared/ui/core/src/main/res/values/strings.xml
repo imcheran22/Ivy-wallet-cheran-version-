@@ -513,7 +513,6 @@
     <string name="daily_summary_notification">Evening summary</string>
     <string name="daily_summary_notification_description">A nightly recap of what you spent and what still needs a category.</string>
     <string name="quick_add_keypad">Quick add keypad</string>
-    <string name="left_to_spend">Left to spend</string>
     <string name="recent_transactions">Recent transactions</string>
     <string name="no_budgets_yet_widget">No budgets yet. Set one and this shows what\'s left.</string>
     <string name="safe_to_spend_today">%1$s a day</string>
@@ -579,7 +578,6 @@
     <string name="duplicates_removed">Removed %1$d duplicate transactions</string>
     <string name="transactions_recategorized">Recategorized %1$d transactions</string>
     <string name="only_uncategorized">Only uncategorized</string>
-    <string name="select_all">Select all</string>
     <string name="clear">Clear</string>
     <string name="selected_count">%1$d selected</string>
     <string name="move_selected_to">Move selected to</string>
@@ -594,4 +592,26 @@
     <string name="secure_screen">Hide from recents and screenshots</string>
     <string name="secure_screen_description">Blanks the app\'s thumbnail in the app switcher and blocks screenshots, so a balance isn\'t left sitting there after you close the app.</string>
     <string name="hide_amounts_tile_hint">Add the \"Hide amounts\" tile to your Quick Settings to flip this from the notification shade, without opening the app.</string>
+    <!-- Cloud sync -->
+    <string name="cloud_sync">Cloud sync</string>
+    <string name="cloud_sync_not_configured">Add your Supabase URL and key in Settings first - pairing and syncing need somewhere to sync to.</string>
+    <string name="sync_status">Status</string>
+    <string name="sync_on">Sync is on</string>
+    <string name="sync_off">Sync is off</string>
+    <string name="last_synced">Last synced %1$s</string>
+    <string name="never_synced">Never synced</string>
+    <string name="sync_now">Sync now</string>
+    <string name="restore_from_cloud">Restore from cloud</string>
+    <string name="restore">Restore</string>
+    <string name="pair_devices">Pair another device</string>
+    <string name="pair_devices_description">Both phones need the same code to share one wallet. Copy this one, paste it on the other phone, and sync.</string>
+    <string name="this_device_code">This device\'s code</string>
+    <string name="copy_code">Copy code</string>
+    <string name="paste_other_device_code">Paste the other device\'s code</string>
+    <string name="pair">Pair</string>
+    <string name="paired_confirmation">Paired. Sync now to pull their data.</string>
+    <string name="restore_preview_warning">Restoring overwrites local rows with the cloud copy. Here is what you would be replacing:</string>
+    <string name="restore_preview_empty">There is nothing in the cloud yet, so there is nothing to restore.</string>
+    <string name="restore_preview_counts">%1$d in cloud / %2$d here</string>
+    <string name="transactions_title">Transactions</string>
 </resources>

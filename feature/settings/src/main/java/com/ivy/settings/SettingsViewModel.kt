@@ -355,10 +355,18 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             cloudSyncInProgress.value = true
             cloudSyncError.value = null
-            cloudSyncRepository.pushAll().fold(
-                ifLeft = { error -> cloudSyncError.value = error },
-                ifRight = {
+            // Merge rather than push: a plain push would overwrite whatever the other paired
+            // device changed since this one last synced.
+            cloudSyncRepository.sync().fold(
+                ifLeft = { error ->
+                    cloudSyncError.value = error
+                    cloudSyncSettings.setLastResult(error)
+                },
+                ifRight = { result ->
                     cloudSyncLastSyncedEpochMs.longValue = System.currentTimeMillis()
+                    cloudSyncSettings.setLastResult(
+                        "Pulled ${result.pulled}, pushed ${result.pushed}"
+                    )
                 }
             )
             cloudSyncInProgress.value = false

@@ -31,6 +31,7 @@ object DatastoreKeys {
     // (via a `owner_id` column + RLS policy). Not a real authentication mechanism.
     val CLOUD_SYNC_OWNER_ID = stringPreferencesKey("cloud_sync_owner_id")
     val CLOUD_SYNC_LAST_SYNCED_EPOCH_MS = longPreferencesKey("cloud_sync_last_synced_epoch_ms")
+    val CLOUD_SYNC_LAST_RESULT = stringPreferencesKey("cloud_sync_last_result")
 
     // Quick add
     val QUICK_ADD_NOTIFICATION_ENABLED = booleanPreferencesKey("quick_add_notification_enabled")

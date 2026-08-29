@@ -18,6 +18,7 @@ create table if not exists accounts (
     order_num double precision not null default 0,
     include_in_balance boolean not null default true,
     bank_account_suffix text,
+    archived boolean not null default false,
     updated_at timestamptz not null default now()
 );
 
@@ -43,6 +44,7 @@ create table if not exists transactions (
     description text,
     category_id uuid,
     date_time timestamptz,
+    attachment_url text,
     updated_at timestamptz not null default now()
 );
 
@@ -83,3 +85,7 @@ create policy if not exists "owner can update own transactions" on transactions
 -- there's no Supabase Auth session to check `owner_id` against. If you want the database
 -- itself to enforce isolation between installs, switch to Supabase Auth and replace `owner_id`
 -- with `auth.uid()`, then change these policies to `using (owner_id = auth.uid()::text)`.
+
+-- Upgrading an existing project (safe to re-run):
+alter table accounts add column if not exists archived boolean not null default false;
+alter table transactions add column if not exists attachment_url text;
