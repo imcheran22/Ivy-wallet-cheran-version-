@@ -6,7 +6,9 @@ name: Tracker APK
 # so it needs no secrets and installs on any device.
 on:
   push:
-    branches: ['claude/expense-tracker-quick-log-**']
+    branches:
+      - 'claude/expense-tracker-quick-log-**'
+      - 'claude/money-carryover-income-hide-**'
     paths-ignore:
       - '**.md'
       - 'docs/**'
