@@ -25,6 +25,13 @@ data class HomeState(
 
     val balance: BigDecimal,
 
+    /**
+     * Balance carried into [period] from everything that happened before it - the money
+     * left over from previous months.
+     */
+    val carryOver: BigDecimal,
+    val carryOverEnabled: Boolean,
+
     val buffer: BufferInfo,
 
     val upcoming: LegacyDueSection,

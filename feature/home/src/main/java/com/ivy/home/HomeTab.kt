@@ -165,6 +165,8 @@ fun BoxWithConstraintsScope.HomeUi(
                 onEvent(HomeEvent.SetExpanded(it))
             },
             balance = uiState.balance,
+            carryOver = uiState.carryOver,
+            carryOverEnabled = uiState.carryOverEnabled,
             onOpenMoreMenu = {
                 setMoreMenuExpanded(true)
             },
@@ -296,6 +298,8 @@ fun HomeLazyColumn(
     upcoming: LegacyDueSection,
     overdue: LegacyDueSection,
     balance: BigDecimal,
+    carryOver: BigDecimal,
+    carryOverEnabled: Boolean,
     stats: IncomeExpensePair,
     history: ImmutableList<TransactionHistoryItem>,
 
@@ -377,6 +381,8 @@ fun HomeLazyColumn(
             CashFlowInfo(
                 currency = baseData.baseCurrency,
                 balance = balance.toDouble(),
+                carryOver = carryOver.toDouble(),
+                carryOverEnabled = carryOverEnabled,
 
                 hideBalance = hideBalance,
 
@@ -452,6 +458,8 @@ private fun BoxWithConstraintsScope.PreviewHomeTab(isDark: Boolean = false) {
                     categories = persistentListOf()
                 ),
                 balance = BigDecimal.ZERO,
+                carryOver = BigDecimal.ZERO,
+                carryOverEnabled = true,
                 buffer = BufferInfo(
                     amount = BigDecimal.ZERO,
                     bufferDiff = BigDecimal.ZERO,

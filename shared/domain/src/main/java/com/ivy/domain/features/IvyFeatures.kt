@@ -78,6 +78,15 @@ class IvyFeatures @Inject constructor() : Features {
         defaultValue = false
     )
 
+    override val carryOverBalance = BoolFeature(
+        key = "carry_over_balance",
+        group = FeatureGroup.Other,
+        name = "Carry over money between months",
+        description = "Show what was left at the end of the previous period as the starting " +
+            "balance of the selected one, so unspent money follows you into the next month",
+        defaultValue = true
+    )
+
     override val allFeatures: List<BoolFeature>
         get() = listOf(
             sortCategoriesAscending,
@@ -87,7 +96,8 @@ class IvyFeatures @Inject constructor() : Features {
             showCategorySearchBar,
             hideTotalBalance,
             standardKeypadLayout,
-            showAccountColorsInTransactions
+            showAccountColorsInTransactions,
+            carryOverBalance
             /* will be uncommented when this functionality
              * will be available across the application in up-coming PRs
             showDecimalNumber

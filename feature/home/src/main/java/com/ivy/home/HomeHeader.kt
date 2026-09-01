@@ -211,11 +211,14 @@ private fun HeaderStickyRow(
     }
 }
 
+@Suppress("LongParameterList")
 @ExperimentalAnimationApi
 @Composable
 fun CashFlowInfo(
     currency: String,
     balance: Double,
+    carryOver: Double,
+    carryOverEnabled: Boolean,
     monthlyIncome: Double,
     monthlyExpenses: Double,
     incomeCount: Int,
@@ -314,14 +317,69 @@ fun CashFlowInfo(
             )
         }
 
-        val cashflow = monthlyIncome - monthlyExpenses
-        if (cashflow != 0.0 && !hideBalance) {
-            Spacer(Modifier.height(12.dp))
+        // Cashflow, what the period opened with, and what that leaves are all one
+        // story, so they are drawn together rather than as loose lines here.
+        PeriodSummary(
+            currency = currency,
+            carryOver = carryOver,
+            carryOverEnabled = carryOverEnabled,
+            monthlyIncome = monthlyIncome,
+            monthlyExpenses = monthlyExpenses,
+            hideBalance = hideBalance,
+            hideIncome = hideIncome,
+        )
+    }
+}
 
+/**
+ * The bottom strip of the header: what the period started with, what it earned and spent, and
+ * what that leaves.
+ *
+ * Income and expenses alone make every month look like it starts from nothing, which is why an
+ * unspent August salary seemed to vanish on the 1st of September. [carryOver] is the balance the
+ * period opened with, so `carried over + cashflow` is the money actually available to spend.
+ */
+@Composable
+private fun PeriodSummary(
+    currency: String,
+    carryOver: Double,
+    carryOverEnabled: Boolean,
+    monthlyIncome: Double,
+    monthlyExpenses: Double,
+    hideBalance: Boolean,
+    hideIncome: Boolean,
+) {
+    val cashflow = monthlyIncome - monthlyExpenses
+
+    // Nothing carried in and nothing moved: an untouched month has no story to tell, so the
+    // strip stays out of the way rather than printing a column of zeroes.
+    val hasActivity = carryOver != 0.0 || cashflow != 0.0
+
+    // Carried over is balance information; cashflow and what it adds up to would both let you
+    // work the income back out, so they follow the income switch as well.
+    val showCarriedOver = carryOverEnabled && hasActivity && !hideBalance
+    val showCashflow = cashflow != 0.0 && !hideBalance && !hideIncome
+    val showAvailable = carryOverEnabled && hasActivity && !hideBalance && !hideIncome
+
+    if (!showCarriedOver && !showCashflow) {
+        Spacer(Modifier.height(16.dp))
+        return
+    }
+
+    Spacer(Modifier.height(12.dp))
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+        if (showCarriedOver) {
+            SummaryRow(
+                label = stringResource(R.string.carried_over),
+                amount = carryOver,
+                currency = currency,
+                color = UI.colors.pureInverse.copy(alpha = SUMMARY_LABEL_ALPHA),
+            )
+        }
+
+        if (showCashflow) {
             Text(
-                modifier = Modifier.padding(
-                    start = 24.dp,
-                ),
                 text = stringResource(
                     R.string.cashflow,
                     (if (cashflow > 0) "+" else ""),
@@ -332,13 +390,55 @@ fun CashFlowInfo(
                     color = if (cashflow < 0) Gray else Green,
                 ),
             )
+        }
 
-            Spacer(Modifier.height(4.dp))
-        } else {
-            Spacer(Modifier.height(16.dp))
+        if (showAvailable) {
+            SummaryRow(
+                label = stringResource(R.string.available_to_spend),
+                amount = carryOver + cashflow,
+                currency = currency,
+                color = if (carryOver + cashflow < 0) Gray else UI.colors.pureInverse,
+                emphasized = true,
+            )
         }
     }
+
+    Spacer(Modifier.height(4.dp))
 }
+
+@Composable
+private fun SummaryRow(
+    label: String,
+    amount: Double,
+    currency: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    emphasized: Boolean = false,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = UI.typo.nB2.style(
+                color = color,
+                fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Normal,
+            ),
+        )
+
+        Text(
+            text = "${amount.format(currency)} $currency",
+            style = UI.typo.nB2.style(
+                color = color,
+                fontWeight = if (emphasized) FontWeight.Bold else FontWeight.SemiBold,
+            ),
+        )
+    }
+}
+
+private const val SUMMARY_LABEL_ALPHA = 0.6f
 
 @Composable
 private fun IncomeExpenses(
@@ -369,6 +469,7 @@ private fun IncomeExpenses(
             label = stringResource(R.string.income),
             currency = currency,
             amount = monthlyIncome,
+            hiddenMode = hideIncome,
             testTag = "home_card_income",
             subtitle = countLabel(incomeCount, unsortedIncomeCount),
         ) {
@@ -418,6 +519,7 @@ private fun RowScope.HeaderCard(
     amount: Double,
     testTag: String,
     subtitle: String,
+    hiddenMode: Boolean = false,
     onClick: () -> Unit,
 ) {
     Column(
@@ -466,12 +568,24 @@ private fun RowScope.HeaderCard(
         ) {
             Spacer(Modifier.width(20.dp))
 
-            AmountCurrencyB1(
-                amount = amount,
-                currency = currency,
-                textColor = textColor,
-                shortenBigNumbers = true,
-            )
+            if (hiddenMode) {
+                // Masked the same way as the balance row, so "hidden" looks the same
+                // everywhere on the screen.
+                Text(
+                    text = "****",
+                    style = UI.typo.nB1.style(
+                        color = textColor,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                )
+            } else {
+                AmountCurrencyB1(
+                    amount = amount,
+                    currency = currency,
+                    textColor = textColor,
+                    shortenBigNumbers = true,
+                )
+            }
 
             Spacer(Modifier.width(4.dp))
         }

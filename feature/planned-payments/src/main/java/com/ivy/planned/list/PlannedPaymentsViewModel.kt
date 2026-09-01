@@ -16,6 +16,7 @@ import com.ivy.legacy.datamodel.Account
 import com.ivy.legacy.datamodel.PlannedPaymentRule
 import com.ivy.legacy.utils.ioThread
 import com.ivy.wallet.domain.action.account.AccountsAct
+import com.ivy.wallet.domain.deprecated.logic.PlannedPaymentsGenerator
 import com.ivy.wallet.domain.deprecated.logic.PlannedPaymentsLogic
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -29,6 +30,7 @@ import javax.inject.Inject
 class PlannedPaymentsViewModel @Inject constructor(
     private val settingsDao: SettingsDao,
     private val plannedPaymentsLogic: PlannedPaymentsLogic,
+    private val plannedPaymentsGenerator: PlannedPaymentsGenerator,
     private val categoriesRepository: CategoryRepository,
     private val accountsAct: AccountsAct
 ) : ComposeViewModel<PlannedPaymentsScreenState, PlannedPaymentsScreenEvent>() {
@@ -136,6 +138,10 @@ class PlannedPaymentsViewModel @Inject constructor(
 
     private fun start() {
         viewModelScope.launch {
+            // Refill recurring rules that have run low before reading them, so a daily payment
+            // doesn't quietly disappear from this list once its generated batch is used up.
+            ioThread { plannedPaymentsGenerator.topUpRecurring() }
+
             val settings = ioThread { settingsDao.findFirst() }
             currency = settings.currency
 

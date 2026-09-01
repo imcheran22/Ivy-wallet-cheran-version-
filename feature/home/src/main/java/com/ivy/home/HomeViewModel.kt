@@ -53,6 +53,7 @@ import com.ivy.wallet.domain.action.viewmodel.home.UpdateAccCacheAct
 import com.ivy.wallet.domain.action.viewmodel.home.UpdateCategoriesCacheAct
 import com.ivy.wallet.domain.action.wallet.CalcIncomeExpenseAct
 import com.ivy.wallet.domain.action.wallet.CalcWalletBalanceAct
+import com.ivy.wallet.domain.deprecated.logic.PlannedPaymentsGenerator
 import com.ivy.wallet.domain.deprecated.logic.PlannedPaymentsLogic
 import com.ivy.wallet.domain.pure.data.ClosedTimeRange
 import com.ivy.wallet.domain.pure.data.IncomeExpensePair
@@ -71,6 +72,7 @@ class HomeViewModel @Inject constructor(
     private val ivyContext: IvyWalletCtx,
     private val nav: Navigation,
     private val plannedPaymentsLogic: PlannedPaymentsLogic,
+    private val plannedPaymentsGenerator: PlannedPaymentsGenerator,
     private val customerJourneyLogic: CustomerJourneyCardsProvider,
     private val historyWithDateDivsAct: HistoryWithDateDivsAct,
     private val calcIncomeExpenseAct: CalcIncomeExpenseAct,
@@ -107,6 +109,7 @@ class HomeViewModel @Inject constructor(
     private var history by mutableStateOf<ImmutableList<TransactionHistoryItem>>(persistentListOf())
     private var stats by mutableStateOf(IncomeExpensePair.zero())
     private var balance by mutableStateOf(BigDecimal.ZERO)
+    private var carryOver by mutableStateOf(BigDecimal.ZERO)
     private var buffer by mutableStateOf(
         BufferInfo(
             amount = BigDecimal.ZERO,
@@ -147,6 +150,8 @@ class HomeViewModel @Inject constructor(
             history = getHistory(),
             stats = getStats(),
             balance = getBalance(),
+            carryOver = getCarryOver(),
+            carryOverEnabled = getCarryOverEnabled(),
             buffer = getBuffer(),
             upcoming = getUpcoming(),
             overdue = getOverdue(),
@@ -196,6 +201,16 @@ class HomeViewModel @Inject constructor(
     @Composable
     private fun getBalance(): BigDecimal {
         return balance
+    }
+
+    @Composable
+    private fun getCarryOver(): BigDecimal {
+        return carryOver
+    }
+
+    @Composable
+    private fun getCarryOverEnabled(): Boolean {
+        return features.carryOverBalance.asEnabledState()
     }
 
     @Composable
@@ -258,6 +273,10 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun start() {
         suspend {
+            // Once per app open: keep recurring rules stocked with upcoming instances so the
+            // due sections below don't go empty on a rule that's still active.
+            ioThread { plannedPaymentsGenerator.topUpRecurring() }
+
             val startDay = startDayOfMonthAct(Unit)
             ivyContext.initSelectedPeriodInMemory(
                 startDayOfMonth = startDay
@@ -330,6 +349,16 @@ class HomeViewModel @Inject constructor(
 
         val balanceAmount = calcWalletBalanceAct(
             CalcWalletBalanceAct.Input(baseCurrency = settings.baseCurrency)
+        )
+
+        // What was left over when this period started. Money doesn't reset on the 1st of the
+        // month - an unspent salary is still spendable in September - so the period needs an
+        // opening balance, not just its own income and expenses.
+        carryOver = calcWalletBalanceAct(
+            CalcWalletBalanceAct.Input(
+                baseCurrency = settings.baseCurrency,
+                range = ClosedTimeRange.to(timeRange.from.minusMillis(1))
+            )
         )
 
         balance = balanceAmount
