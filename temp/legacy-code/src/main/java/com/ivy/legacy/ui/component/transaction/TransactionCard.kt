@@ -103,6 +103,7 @@ fun TransactionCard(
     onPayOrGet: (Transaction) -> Unit,
     modifier: Modifier = Modifier,
     onSkipTransaction: (Transaction) -> Unit = {},
+    splitLabel: String? = null,
     onClick: (Transaction) -> Unit,
 ) {
     Column(
@@ -179,6 +180,23 @@ fun TransactionCard(
                     color = UI.colors.pureInverse
                 ),
                 maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        // A split payment is shown as the one expense it was, so the card has to say
+        // that the money came out of more than one place - otherwise the amount here and
+        // the account balances look like they disagree.
+        if (splitLabel != null) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                text = splitLabel,
+                style = UI.typo.nC.style(
+                    color = UI.colors.gray,
+                    fontWeight = FontWeight.Bold
+                ),
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }

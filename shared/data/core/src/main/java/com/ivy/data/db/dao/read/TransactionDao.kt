@@ -158,6 +158,11 @@ interface TransactionDao {
     suspend fun findAllByRecurringRuleId(recurringRuleId: UUID): List<TransactionEntity>
 
     @Query(
+        "SELECT * FROM transactions WHERE isDeleted = 0 AND splitGroupId = :splitGroupId ORDER BY amount DESC"
+    )
+    suspend fun findAllBySplitGroupId(splitGroupId: UUID): List<TransactionEntity>
+
+    @Query(
         "SELECT * FROM transactions WHERE isDeleted = 0 AND dateTime >= :startDate AND dateTime <= :endDate AND type = :type ORDER BY dateTime DESC"
     )
     suspend fun findAllBetweenAndType(

@@ -57,6 +57,11 @@ data class TransactionEntity(
     @SerialName("loanRecordId")
     @Serializable(with = KSerializerUUID::class)
     val loanRecordId: UUID? = null,
+    // Ties together the rows of one payment that came out of several accounts.
+    // Null means an ordinary single-account transaction.
+    @SerialName("splitGroupId")
+    @Serializable(with = KSerializerUUID::class)
+    val splitGroupId: UUID? = null,
     @Deprecated("Obsolete field used for cloud sync. Can't be deleted because of backwards compatibility")
     @SerialName("isSynced")
     val isSynced: Boolean = false,

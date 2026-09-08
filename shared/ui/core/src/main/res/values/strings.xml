@@ -99,6 +99,10 @@
     <string name="spent_today">Spent today: %1$s %2$s</string>
     <string name="at_this_rate">At this rate: %1$s %2$s by month end</string>
     <string name="carried_over">Carried over</string>
+    <string name="split_payment">Split payment</string>
+    <string name="split_payment_description">Paid from more than one account? Add the part that came from elsewhere — the rest stays on the account above.</string>
+    <string name="add_split">Add split</string>
+    <string name="paid_from_split">Paid from %1$s accounts</string>
     <string name="available_to_spend">Available to spend</string>
     <string name="search_transactions">Search transactions...</string>
     <string name="savings_goal">Savings goal</string>

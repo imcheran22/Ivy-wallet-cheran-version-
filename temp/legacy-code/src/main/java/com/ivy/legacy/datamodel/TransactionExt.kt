@@ -19,6 +19,7 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     attachmentUrl = attachmentUrl,
     loanId = loanId,
     loanRecordId = loanRecordId,
+    splitGroupId = splitGroupId,
     id = id,
     isSynced = isSynced,
     isDeleted = isDeleted

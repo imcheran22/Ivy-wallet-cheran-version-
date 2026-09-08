@@ -34,6 +34,7 @@ import com.ivy.domain.features.Features
 import com.ivy.legacy.data.EditTransactionDisplayLoan
 import com.ivy.legacy.datamodel.Account
 import com.ivy.legacy.datamodel.temp.toDomain
+import com.ivy.legacy.datamodel.temp.toLegacy
 import com.ivy.legacy.domain.deprecated.logic.AccountCreator
 import com.ivy.legacy.utils.computationThread
 import com.ivy.legacy.utils.ioThread
@@ -124,6 +125,7 @@ class EditTransactionViewModel @Inject constructor(
     private var toAccount by mutableStateOf<Account?>(null)
     private var category by mutableStateOf<Category?>(null)
     private var amount by mutableDoubleStateOf(0.0)
+    private var splits by mutableStateOf<ImmutableList<SplitPart>>(persistentListOf())
     private var hasChanges by mutableStateOf(false)
     private var displayLoanHelper by mutableStateOf(EditTransactionDisplayLoan())
 
@@ -202,6 +204,7 @@ class EditTransactionViewModel @Inject constructor(
             toAccount = getToAccount(),
             category = getCategory(),
             amount = getAmount(),
+            splits = getSplits(),
             hasChanges = getHasChanges(),
             displayLoanHelper = getDisplayLoanHelper(),
             backgroundProcessingStarted = getBackgroundProcessingStarted(),
@@ -209,6 +212,11 @@ class EditTransactionViewModel @Inject constructor(
             tags = getTags(),
             transactionAssociatedTags = getTransactionAssociatedTags()
         )
+    }
+
+    @Composable
+    private fun getSplits(): ImmutableList<SplitPart> {
+        return splits
     }
 
     @Composable
@@ -319,6 +327,8 @@ class EditTransactionViewModel @Inject constructor(
             EditTransactionViewEvent.Duplicate -> duplicate()
             is EditTransactionViewEvent.EditCategory -> editCategory(event.updatedCategory)
             is EditTransactionViewEvent.OnAccountChanged -> onAccountChanged(event.newAccount)
+            is EditTransactionViewEvent.OnAddSplit -> onAddSplit(event.account, event.amount)
+            is EditTransactionViewEvent.OnRemoveSplit -> onRemoveSplit(event.index)
             is EditTransactionViewEvent.OnAmountChanged -> onAmountChanged(event.newAmount)
             is EditTransactionViewEvent.OnCategoryChanged -> onCategoryChanged(event.newCategory)
             is EditTransactionViewEvent.OnDescriptionChanged ->
@@ -413,6 +423,46 @@ class EditTransactionViewModel @Inject constructor(
         }
 
         displayLoanHelper = getDisplayLoanHelper(trans = transaction)
+
+        displaySplits(transaction)
+    }
+
+    /**
+     * Rebuilds the editor's view of a split payment from the rows on disk.
+     *
+     * Any part of a split can be tapped in the list, but the editor always works from the
+     * biggest one: the headline amount becomes the whole payment again and the smaller
+     * parts become the splits carved out of it, which is how it was entered.
+     */
+    private suspend fun displaySplits(transaction: Transaction) {
+        val groupId = transaction.splitGroupId
+        if (groupId == null) {
+            splits = persistentListOf()
+            return
+        }
+
+        // Ordered by amount descending, so the primary account is first.
+        val parts = transactionRepo.findAllBySplitGroupId(groupId)
+            .map { it.toLegacy(transactionMapper) }
+        if (parts.isEmpty()) {
+            splits = persistentListOf()
+            return
+        }
+
+        val primary = parts.first()
+        loadedTransaction = primary
+        account = accountByIdAct(primary.accountId) ?: account
+        amount = parts.sumOf { it.amount.toDouble() }
+
+        splits = parts.drop(1)
+            .mapNotNull { part ->
+                accountByIdAct(part.accountId)?.let {
+                    SplitPart(account = it, amount = part.amount.toDouble())
+                }
+            }
+            .toImmutableList()
+
+        account?.let { updateCurrency(account = it) }
     }
 
     private suspend fun getDisplayLoanHelper(trans: Transaction): EditTransactionDisplayLoan {
@@ -611,7 +661,14 @@ class EditTransactionViewModel @Inject constructor(
         viewModelScope.launch {
             ioThread {
                 loadedTransaction?.let {
-                    transactionRepo.deleteById(TransactionId(it.id))
+                    // Deleting one leg of a split payment would leave the rest behind as
+                    // an orphaned part of an expense that no longer exists.
+                    val groupId = it.splitGroupId
+                    if (groupId != null) {
+                        transactionRepo.deleteBySplitGroupId(groupId)
+                    } else {
+                        transactionRepo.deleteById(TransactionId(it.id))
+                    }
                 }
                 closeScreen()
             }
@@ -693,6 +750,26 @@ class EditTransactionViewModel @Inject constructor(
         }
     }
 
+    private fun onAddSplit(splitAccount: Account, splitAmount: Double) {
+        if (splitAmount <= 0.0) return
+        // Never let the parts outgrow the total - the primary account has to keep a
+        // positive remainder or the split stops describing a real payment.
+        val headroom = amount - splits.sumOf { it.amount }
+        if (splitAmount >= headroom) return
+
+        splits = (splits + SplitPart(account = splitAccount, amount = splitAmount))
+            .toImmutableList()
+        hasChanges = true
+        saveIfEditMode()
+    }
+
+    private fun onRemoveSplit(index: Int) {
+        if (index !in splits.indices) return
+        splits = splits.filterIndexed { i, _ -> i != index }.toImmutableList()
+        hasChanges = true
+        saveIfEditMode()
+    }
+
     private fun save(closeScreen: Boolean = true) {
         if (!validTransaction()) {
             return
@@ -747,9 +824,7 @@ class EditTransactionViewModel @Inject constructor(
                     accountsChanged = false
                 }
 
-                loadedTransaction().toDomain(transactionMapper)?.let {
-                    transactionRepo.save(it)
-                }
+                saveSplitAware(loadedTransaction())
 
                 refreshWidget(WalletBalanceWidgetReceiver::class.java)
             }
@@ -783,6 +858,64 @@ class EditTransactionViewModel @Inject constructor(
     }
 
     private suspend fun baseCurrency(): String = ioThread { settingsDao.findFirst().currency }
+
+    /**
+     * Writes the transaction, as one row or as a linked group.
+     *
+     * A row carries a single accountId, so a payment made partly in cash and partly by
+     * card can only be recorded as one row per account. They share a [splitGroupId] so
+     * the lists can show them as the single expense the user actually made, and so both
+     * account balances move by their own share.
+     *
+     * The whole group is rewritten from scratch on every save. Parts can be added and
+     * removed between saves, so reconciling row-by-row would be more code than it is
+     * worth for a handful of rows.
+     */
+    private suspend fun saveSplitAware(primary: Transaction) {
+        val previousGroupId = primary.splitGroupId
+        if (previousGroupId != null) {
+            transactionRepo.deleteBySplitGroupId(previousGroupId)
+        }
+
+        if (splits.isEmpty()) {
+            // Plain single-account transaction. Clear any group id it used to carry, so
+            // a split that has had its extra parts removed goes back to being ordinary.
+            primary.copy(splitGroupId = null)
+                .toDomain(transactionMapper)
+                ?.let { transactionRepo.save(it) }
+            return
+        }
+
+        val groupId = previousGroupId ?: UUID.randomUUID()
+        val remainder = primary.amount - splits.sumOf { it.amount }.toBigDecimal()
+
+        val rows = buildList {
+            add(
+                primary.copy(
+                    amount = remainder,
+                    toAmount = remainder,
+                    splitGroupId = groupId,
+                )
+            )
+            splits.forEach { part ->
+                add(
+                    primary.copy(
+                        id = UUID.randomUUID(),
+                        accountId = part.account.id,
+                        amount = part.amount.toBigDecimal(),
+                        toAmount = part.amount.toBigDecimal(),
+                        splitGroupId = groupId,
+                    )
+                )
+            }
+        }
+
+        rows.forEach { row ->
+            row.toDomain(transactionMapper)?.let { transactionRepo.save(it) }
+        }
+
+        loadedTransaction = rows.first()
+    }
 
     private fun closeScreen() {
         if (nav.backStackEmpty()) {

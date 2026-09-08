@@ -111,6 +111,7 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransactionScreen)
         dateTime = uiState.dateTime,
         category = uiState.category,
         account = uiState.account,
+        splits = uiState.splits,
         toAccount = uiState.toAccount,
         dueDate = uiState.dueDate,
         amount = uiState.amount,
@@ -143,6 +144,12 @@ fun BoxWithConstraintsScope.EditTransactionScreen(screen: EditTransactionScreen)
         },
         onAccountChange = {
             viewModel.onEvent(EditTransactionViewEvent.OnAccountChanged(it))
+        },
+        onAddSplit = { splitAccount, splitAmount ->
+            viewModel.onEvent(EditTransactionViewEvent.OnAddSplit(splitAccount, splitAmount))
+        },
+        onRemoveSplit = {
+            viewModel.onEvent(EditTransactionViewEvent.OnRemoveSplit(it))
         },
         onToAccountChange = {
             viewModel.onEvent(EditTransactionViewEvent.OnToAccountChanged(it))
@@ -200,6 +207,7 @@ private fun BoxWithConstraintsScope.UI(
     category: Category?,
     dateTime: Instant?,
     account: Account?,
+    splits: ImmutableList<SplitPart>,
     toAccount: Account?,
     dueDate: Instant?,
     amount: Double,
@@ -214,6 +222,8 @@ private fun BoxWithConstraintsScope.UI(
     onAmountChange: (Double) -> Unit,
     onCategoryChange: (Category?) -> Unit,
     onAccountChange: (Account) -> Unit,
+    onAddSplit: (Account, Double) -> Unit,
+    onRemoveSplit: (Int) -> Unit,
     onToAccountChange: (Account) -> Unit,
     onDueDateChange: (LocalDateTime?) -> Unit,
     onSetDate: () -> Unit,
@@ -240,6 +250,7 @@ private fun BoxWithConstraintsScope.UI(
     var categoryModalData: CategoryModalData? by remember { mutableStateOf(null) }
     var accountModalData: AccountModalData? by remember { mutableStateOf(null) }
     var descriptionModalVisible by remember { mutableStateOf(false) }
+    var pendingSplitAccount by remember { mutableStateOf<Account?>(null) }
     var deleteTrnModalVisible by remember { mutableStateOf(false) }
     var changeTransactionTypeModalVisible by remember { mutableStateOf(false) }
     var amountModalShown by remember { mutableStateOf(false) }
@@ -395,6 +406,21 @@ private fun BoxWithConstraintsScope.UI(
             onEditDate = onSetDate,
             onEditTime = onSetTime,
         )
+
+        // A transfer already names two accounts, so splitting one would be ambiguous.
+        if (transactionType != TransactionType.TRANSFER) {
+            Spacer(Modifier.height(20.dp))
+
+            SplitPaymentSection(
+                total = amount,
+                currency = baseCurrency,
+                primaryAccount = account,
+                accounts = accounts,
+                splits = splits,
+                onPickAccount = { pendingSplitAccount = it },
+                onRemoveSplit = onRemoveSplit,
+            )
+        }
 
         if (transactionType == TransactionType.TRANSFER && customExchangeRateState.showCard) {
             Spacer(Modifier.height(12.dp))
@@ -610,6 +636,19 @@ private fun BoxWithConstraintsScope.UI(
         visible = waitModalVisible
     )
 
+    val splitAccount = pendingSplitAccount
+    AmountModal(
+        id = remember(splitAccount) { UUID.randomUUID() },
+        visible = splitAccount != null,
+        currency = baseCurrency,
+        initialAmount = null,
+        dismiss = { pendingSplitAccount = null },
+        onAmountChanged = { entered ->
+            splitAccount?.let { onAddSplit(it, entered) }
+            pendingSplitAccount = null
+        }
+    )
+
     AmountModal(
         id = amountModalId,
         visible = exchangeRateAmountModalShown,
@@ -685,6 +724,7 @@ private fun BoxWithConstraintsScope.Preview(isDark: Boolean = false) {
             description = null,
             category = null,
             account = Account(name = "phyre", Orange.toArgb()),
+            splits = persistentListOf(),
             toAccount = null,
             amount = 0.0,
             dueDate = null,
@@ -697,6 +737,8 @@ private fun BoxWithConstraintsScope.Preview(isDark: Boolean = false) {
             onDueDateChange = {},
             onCategoryChange = {},
             onAccountChange = {},
+            onAddSplit = { _, _ -> },
+            onRemoveSplit = {},
             onToAccountChange = {},
             onDescriptionChange = {},
             onTitleChange = {},

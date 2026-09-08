@@ -279,6 +279,18 @@ class TransactionRepository @Inject constructor(
         }
     }
 
+    suspend fun deleteBySplitGroupId(splitGroupId: UUID) {
+        withContext(dispatchersProvider.io) {
+            writeTransactionDao.deleteBySplitGroupId(splitGroupId)
+        }
+    }
+
+    suspend fun findAllBySplitGroupId(splitGroupId: UUID): List<Transaction> = retrieveTrns(
+        dbCall = {
+            transactionDao.findAllBySplitGroupId(splitGroupId)
+        }
+    )
+
     suspend fun deleteAllByAccountId(accountId: AccountId) {
         withContext(dispatchersProvider.io) {
             writeTransactionDao.deleteAllByAccountId(accountId.value)

@@ -30,6 +30,8 @@ data class EditTransactionViewState(
     val toAccount: Account?,
     val category: Category?,
     val amount: Double,
+    /** Slices of [amount] paid from other accounts; the primary account keeps the rest. */
+    val splits: ImmutableList<SplitPart>,
     val hasChanges: Boolean,
     val displayLoanHelper: EditTransactionDisplayLoan,
     val backgroundProcessingStarted: Boolean,
@@ -44,6 +46,8 @@ sealed interface EditTransactionViewEvent {
     data class OnDescriptionChanged(val newDescription: String?) : EditTransactionViewEvent
     data class OnCategoryChanged(val newCategory: Category?) : EditTransactionViewEvent
     data class OnAccountChanged(val newAccount: Account) : EditTransactionViewEvent
+    data class OnAddSplit(val account: Account, val amount: Double) : EditTransactionViewEvent
+    data class OnRemoveSplit(val index: Int) : EditTransactionViewEvent
     data class OnToAccountChanged(val newAccount: Account) : EditTransactionViewEvent
     data class OnDueDateChanged(val newDueDate: LocalDateTime?) : EditTransactionViewEvent
     data object OnChangeDate : EditTransactionViewEvent

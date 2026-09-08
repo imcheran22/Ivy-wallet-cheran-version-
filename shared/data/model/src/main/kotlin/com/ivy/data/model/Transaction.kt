@@ -71,6 +71,8 @@ data class TransactionMetadata(
     val loanId: UUID? = null,
     // This refers to the loan record id that is linked with a transaction
     val loanRecordId: UUID?,
+    // Shared by every part of a payment that was split across accounts
+    val splitGroupId: UUID? = null,
 )
 
 fun Transaction.getFromValue(): PositiveValue = when (this) {

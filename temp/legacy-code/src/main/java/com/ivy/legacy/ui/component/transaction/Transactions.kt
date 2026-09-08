@@ -36,6 +36,8 @@ import com.ivy.wallet.ui.theme.Red
 import com.ivy.wallet.ui.theme.White
 import com.ivy.wallet.ui.theme.components.IvyButton
 import com.ivy.wallet.ui.theme.components.IvyIcon
+import java.math.BigDecimal
+import java.util.UUID
 
 @Deprecated("Old design system. Use `:ivy-design` and Material3")
 fun LazyListScope.transactions(
@@ -247,9 +249,14 @@ private fun LazyListScope.historySection(
 
     onPayOrGet: (Transaction) -> Unit
 ) {
-    if (history.isNotEmpty()) {
+    // Rows of one split payment are merged into the single expense the user actually
+    // made. Only presentation: the underlying rows still carry their own account and
+    // share, so balances and the date-divider totals are unaffected.
+    val (merged, splitPartCounts) = mergeSplitPayments(history)
+
+    if (merged.isNotEmpty()) {
         items(
-            items = history,
+            items = merged,
             key = {
                 when (it) {
                     is Transaction -> it.id.toString()
@@ -262,11 +269,16 @@ private fun LazyListScope.historySection(
                 is Transaction -> {
                     val nav = navigation()
 
+                    val partCount = it.splitGroupId?.let(splitPartCounts::get)
+
                     TransactionCard(
                         baseData = baseData,
 
                         transaction = it,
                         shouldShowAccountSpecificColorInTransactions = shouldShowAccountSpecificColorInTransactions,
+                        splitLabel = partCount?.let { n ->
+                            stringRes(R.string.paid_from_split, n.toString())
+                        },
                         onPayOrGet = onPayOrGet
                     ) { trn ->
                         onTransactionClick(
@@ -280,7 +292,7 @@ private fun LazyListScope.historySection(
                     HistoryDateDivider(
                         date = it.date,
                         spacerTop = dateDividerMarginTop
-                            ?: if (it == history.firstOrNull()) 24.dp else 32.dp,
+                            ?: if (it == merged.firstOrNull()) 24.dp else 32.dp,
                         baseCurrency = baseData.baseCurrency,
                         income = it.income,
                         expenses = it.expenses
@@ -369,4 +381,52 @@ private fun LazyListScope.scrollHackSpacer(
             }
         }
     }
+}
+
+/**
+ * Collapses the rows of a split payment into the one transaction it represents.
+ *
+ * A payment settled from several accounts is stored as one row per account - that is the
+ * only way each balance can move by its own share. Showing those rows separately would
+ * present a single ₹100 shop as a ₹70 expense and a ₹30 expense, so here they are folded
+ * back into one entry carrying the full amount.
+ *
+ * Purely a display concern: nothing is written, and the date-divider totals are computed
+ * from the untouched rows, so they still add up.
+ */
+private fun mergeSplitPayments(
+    history: List<TransactionHistoryItem>
+): Pair<List<TransactionHistoryItem>, Map<UUID, Int>> {
+    val groupIds = history.asSequence()
+        .filterIsInstance<Transaction>()
+        .mapNotNull { it.splitGroupId }
+        .toSet()
+
+    if (groupIds.isEmpty()) return history to emptyMap()
+
+    val totals = mutableMapOf<UUID, BigDecimal>()
+    val counts = mutableMapOf<UUID, Int>()
+    history.filterIsInstance<Transaction>().forEach { trn ->
+        val groupId = trn.splitGroupId ?: return@forEach
+        totals[groupId] = (totals[groupId] ?: BigDecimal.ZERO) + trn.amount
+        counts[groupId] = (counts[groupId] ?: 0) + 1
+    }
+
+    val seen = mutableSetOf<UUID>()
+    val merged = history.mapNotNull { item ->
+        if (item !is Transaction) return@mapNotNull item
+        val groupId = item.splitGroupId ?: return@mapNotNull item
+
+        // Keep the first row of each group and give it the whole amount; the rest of the
+        // group has already been folded into it.
+        if (seen.add(groupId)) {
+            item.copy(amount = totals[groupId] ?: item.amount)
+        } else {
+            null
+        }
+    }
+
+    // A group with a single visible row - the rest fell outside this period - is just an
+    // ordinary transaction as far as the card is concerned.
+    return merged to counts.filterValues { it > 1 }
 }
