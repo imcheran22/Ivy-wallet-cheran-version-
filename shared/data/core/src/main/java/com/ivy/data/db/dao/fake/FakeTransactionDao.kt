@@ -202,6 +202,13 @@ class FakeTransactionDao : TransactionDao, WriteTransactionDao {
             .sortedByDescending { it.dateTime }
     }
 
+    override suspend fun findAllBySplitGroupId(splitGroupId: UUID): List<TransactionEntity> {
+        // Biggest share first, matching the query: the editor treats that row as the
+        // primary account and the rest as the splits carved out of it.
+        return items.filter { it.splitGroupId == splitGroupId && !it.isDeleted }
+            .sortedByDescending { it.amount }
+    }
+
     override suspend fun findAllBetweenAndType(
         startDate: Instant,
         endDate: Instant,
@@ -315,6 +322,10 @@ class FakeTransactionDao : TransactionDao, WriteTransactionDao {
 
     override suspend fun deleteById(id: UUID) {
         items.removeIf { it.id == id }
+    }
+
+    override suspend fun deleteBySplitGroupId(splitGroupId: UUID) {
+        items.removeIf { it.splitGroupId == splitGroupId }
     }
 
     override suspend fun deleteAllByAccountId(accountId: UUID) {
